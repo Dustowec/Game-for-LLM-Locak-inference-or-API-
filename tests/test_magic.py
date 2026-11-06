@@ -202,13 +202,13 @@ class TestTotalSpells:
 # ============================================================
 
 class TestTeacherKind:
-    """§9: маг -> стихия, служитель -> свет, чернокнижник -> тьма."""
+    """§9: маг -> стихия, служитель_церкви -> свет, чернокнижник -> тьма."""
 
     def test_mage_gives_element(self):
         assert magic.TEACHER_KIND["маг"] == "element"
 
     def test_priest_gives_light(self):
-        assert magic.TEACHER_KIND["служитель"] == "свет"
+        assert magic.TEACHER_KIND["служитель_церкви"] == "свет"
 
     def test_warlock_gives_dark(self):
         assert magic.TEACHER_KIND["чернокнижник"] == "тьма"

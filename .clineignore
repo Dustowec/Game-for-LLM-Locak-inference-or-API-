@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+HANDOFF-1.md
+HANDOFF-2.md
+HANDOFF-3.md
+HANDOFF-4.md
+HANDOFF-5.md

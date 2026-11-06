@@ -9,12 +9,18 @@ Plain-text, секции в квадратных скобках. Собирае�
 
 Пустые секции (РУКИ/КОШЕЛЁК/НАВЫКИ) выводятся со словом "пусто".
 Заголовок [СОСТОЯНИЕ] и [МЕСТО] есть всегда.
+
+Боевой отчёт §23 — отдельная функция format_combat_report.
+Она НЕ трогает format_sensory_report (5 секций) и работает
+от CombatState + BurtStats.
 """
 from __future__ import annotations
 
 import config
+from burt.combat import CombatState, BurtStats, EnemyInstance
+from burt.bestiary import ENEMIES
 
-__all__ = ["format_sensory_report"]
+__all__ = ["format_sensory_report", "format_combat_report"]
 
 
 # ---------------------------------------------------------------------
@@ -199,3 +205,109 @@ def _format_skills(visible: dict) -> str:
             lines.append(f"{s['name']} {s['level']}/{s['max']}")
 
     return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------
+# [БОЙ] — §23
+# ---------------------------------------------------------------------
+
+def format_combat_report(combat: CombatState, burt: BurtStats) -> str:
+    """Боевой сенсорный отчёт (§23).
+
+    Формат:
+        [БОЙ]
+        Противник: волк_1 (Мёртв), волк_2
+        Твой ход.
+
+        атаковать волк_2
+        блокировать
+        бежать
+
+    Правила:
+    - HP врагов НЕ показываем, урон НЕ показываем.
+    - Мёртвых помечаем "(Мёртв)".
+    - Раунд и инициативу НЕ выводим (они в hidden).
+    - Нумерация (волк_1, волк_2) — если врагов одного типа > 1.
+      Одиночный враг или смешанные типы — без суффикса.
+    - Меню собирается из реально доступных:
+        атаковать <цель>  — по строке на каждого живого;
+        блокировать      — если есть живые;
+        бежать           — если есть живые и нет no_flee;
+        кастовать        — если burt.spells_available.
+    """
+    type_counts: dict[str, int] = {}
+    for e in combat.enemies:
+        type_counts[e.key] = type_counts.get(e.key, 0) + 1
+
+    opponents: list[str] = []
+    alive: list[tuple[EnemyInstance, str]] = []
+    for e in combat.enemies:
+        display = _combat_display_name(e, type_counts)
+        if e.alive:
+            opponents.append(display)
+            alive.append((e, display))
+        else:
+            opponents.append(f"{display} (Мёртв)")
+
+    lines = ["[БОЙ]"]
+    lines.append("Противник: " + ", ".join(opponents))
+    lines.append("Твой ход.")
+
+    menu = _build_combat_menu_lines(alive, burt)
+    if menu:
+        lines.append("")
+        lines.extend(menu)
+
+    return "\n".join(lines)
+
+
+def _combat_display_name(
+    enemy: EnemyInstance,
+    type_counts: dict[str, int],
+) -> str:
+    """Имя врага для отчёта.
+
+    Номер (_1, _2) — только если врагов этого типа > 1.
+    Одиночный волк выводится как "волк", не "волк_1".
+    """
+    name = ENEMIES[enemy.key].name
+    if type_counts.get(enemy.key, 1) > 1:
+        parts = enemy.id.rsplit("_", 1)
+        if len(parts) == 2 and parts[1].isdigit():
+            return f"{name}_{parts[1]}"
+    return name
+
+
+def _is_no_flee(enemy: EnemyInstance) -> bool:
+    t = ENEMIES.get(enemy.key)
+    if t is None:
+        return False
+    tags = t.tags
+    return bool(tags) and "no_flee" in tags
+
+
+def _build_combat_menu_lines(
+    alive: list[tuple[EnemyInstance, str]],
+    burt: BurtStats,
+) -> list[str]:
+    """Собрать строки меню по реально доступным действиям.
+
+    Пусто, если живых врагов нет — тогда и меню нет.
+    """
+    if not alive:
+        return []
+
+    menu: list[str] = []
+    for _, display in alive:
+        menu.append(f"атаковать {display}")
+
+    menu.append("блокировать")
+
+    any_no_flee = any(_is_no_flee(e) for e, _ in alive)
+    if not any_no_flee:
+        menu.append("бежать")
+
+    if burt.spells_available:
+        menu.append("кастовать")
+
+    return menu

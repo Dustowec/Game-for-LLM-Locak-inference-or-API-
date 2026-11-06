@@ -263,18 +263,72 @@ class TestBurtFlee:
         assert r.burt.hp == 10
 
     def test_flee_1_fail_max(self):
+        # flee roll=1 → провал + max входящий (3). burt 10→7.
+        # wolf действует однократно: roll=3→min 1. burt 7→6.
         c = start_combat(["wolf"], "burt")
         burt = make_burt()
-        r = resolve_round(c, burt, "flee", None, rng_from([1]))
+        r = resolve_round(c, burt, "flee", None, rng_from([1, 3]))
         assert r.outcome == "ongoing"
-        assert r.burt.hp == 7
+        assert r.burt.hp == 6
 
     def test_flee_2_fail_min(self):
+        # flee roll=2 → провал + min входящий (1). burt 10→9.
+        # wolf действует: roll=2→miss (с узким пулом[1,3]: не узкий, roll=2 miss).
+        # Итого uрон от wolves actions=0, HP остаётся 9.
         c = start_combat(["wolf"], "burt")
         burt = make_burt()
-        r = resolve_round(c, burt, "flee", None, rng_from([2]))
+        r = resolve_round(c, burt, "flee", None, rng_from([2, 2]))
         assert r.outcome == "ongoing"
         assert r.burt.hp == 9
+
+
+# ─── Побег и ход врагов (кос. №4) ──────────────────────
+
+class TestPostFleeEnemyTurn:
+    """Кос. №4: при неудачном побеге враги получают ОДНО действие."""
+
+    def test_flee_failed_wolf_melee(self):
+        # Wolf действует после failed flee: roll=3→min 1. burt 10→7→6.
+        c = start_combat(["wolf"], "burt")
+        burt = make_burt()
+        r = resolve_round(c, burt, "flee", None, rng_from([2, 3]))
+        assert r.outcome == "ongoing"
+        assert r.burt.hp == 8  # 1(flee fail min) + 1(wolf melee)= 2 loss
+
+    def test_flee_failed_shaman_casts(self):
+        # Shaman с мана кастует после failed flee.
+        # Roll=1 для flee: goblin_shaman damage=[0,1], roll=1 → incoming_max=1. HP 10→9.
+        # Roll=3 для shaman spell: hit, dmg=3. HP 9→6.
+        c = start_combat(["goblin_shaman"], "burt")
+        burt = make_burt()
+        r = resolve_round(c, burt, "flee", None, rng_from([1, 3]))
+        assert r.outcome == "ongoing"
+        assert r.burt.hp == 6  # 1(flee max) + 3(spell hit)= 4 total loss
+        assert r.combat.enemies[0].mp == 4  # потратил ману
+
+    def test_flee_failed_shaman_no_mp_melee(self):
+        # Шаман без маны бьёт посохом после failed flee.
+        c = start_combat(["goblin_shaman"], "burt")
+        c.enemies[0].mp = 0  # нет маны → мили
+        burt = make_burt()
+        # flee roll=2→fail+min(0)=0. HP остаётся 10.
+        # Staff: staff_penalty=-1, roll=3→eff 2→miss. HP=10.
+        r = resolve_round(c, burt, "flee", None, rng_from([2, 3]))
+        assert r.outcome == "ongoing"
+        assert r.burt.hp == 10  # 0(flee fail min) + 0(staff miss)
+
+    def test_flee_multiple_enemies_all_act(self):
+        # Два врага: каждый действует однократно.
+        # wolf1: flee roll=2→fail+min1. HP 10→9.
+        # wolf1 turn: roll=3→min 1. HP 9→8.
+        # wolf2 turn: roll=4→avg 2. HP 8→6.
+        c = start_combat(["wolf", "wolf"], "burt")
+        burt = make_burt()
+        r = resolve_round(c, burt, "flee", None, rng_from([2, 3, 4]))
+        assert r.outcome == "ongoing"
+        assert r.burt.hp == 6  # 1 + 1 + 2 = 4 total damage
+
+
 
     def test_flee_3_with_hit(self):
         # flee roll=3, hit_roll=4 → ушёл, получил min 1.
@@ -382,6 +436,62 @@ class TestShaman:
             c, burt, "attack", "goblin_shaman_1", rng_from([3, 6]),
         )
         assert r.burt.hp == 19
+
+
+# ─── Заклинание врага с блоком (кос. №2) ──────────────────
+
+class TestEnemySpellVsBlock:
+    """Кос. №2: всегда бросаем кубик атаки даже при касте.
+
+    В текущей архитектуре «блок» не передаёт block_roll
+    в _enemy_spell/_enemy_melee (см. resolve_round). Поэтому
+    блок семантический, не механический. Код _enemy_spell стал
+    правильным на случай если архитектуру расширят.
+
+    Гоблин-шаман: spell_damage_min=3, spell_damage_max=6.
+    Resolve attack roll=3 на [3..6] → min damage = 3.
+    """
+
+    def test_enemy_spell_no_block_hit(self):
+        # Шаман кастует, атака попала (roll=3→min=3).
+        c = start_combat(["goblin_shaman"], "burt")
+        burt = make_burt(hp=20, hp_max=20)
+        r = resolve_round(
+            c, burt, "attack", "goblin_shaman_1", rng_from([3, 3]),
+        )
+        assert r.burt.hp == 17  # 3 урона от spell
+        assert r.combat.enemies[0].mp == 4
+
+    def test_enemy_spell_no_block_miss(self):
+        # Шаман кастует, атака промахнулась (roll=1→miss).
+        c = start_combat(["goblin_shaman"], "burt")
+        burt = make_burt(hp=20, hp_max=20)
+        r = resolve_round(
+            c, burt, "attack", "goblin_shaman_1", rng_from([3, 1]),
+        )
+        assert r.burt.hp == 20  # 0 урона: атака промахнулась
+        assert r.combat.enemies[0].mp == 4  # ману потратил
+
+    def test_enemy_spell_mp_spent_on_miss(self):
+        # Ману тратим даже когда каст промахивается.
+        c = start_combat(["goblin_shaman"], "burt")
+        c.enemies[0].mp = 5
+        burt = make_burt(hp=20, hp_max=20)
+        r = resolve_round(
+            c, burt, "attack", "goblin_shaman_1", rng_from([3, 1]),
+        )
+        assert r.combat.enemies[0].mp == 4  # потратил spite miss
+
+    def test_enemy_spell_mp_spent_on_hit(self):
+        # Ману тратим когда каст попал тоже.
+        c = start_combat(["goblin_shaman"], "burt")
+        c.enemies[0].mp = 5
+        burt = make_burt(hp=20, hp_max=20)
+        r = resolve_round(
+            c, burt, "attack", "goblin_shaman_1", rng_from([3, 3]),
+        )
+        assert r.combat.enemies[0].mp == 4  # потратил spite hit
+
 
 
 # ─── Дракон ────────────────────────────────────────────────

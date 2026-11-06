@@ -1,0 +1,82 @@
+{
+  "pala_1": {
+    "chain": "pala",
+    "step": 1,
+    "title": "инжалы гоблинов",
+    "type": "deliver",
+    "deliver_items": [
+      {
+        "name": "кинжал гоблина",
+        "count": 20
+      },
+      {
+        "name": "посох гоблина",
+        "count": 2
+      }
+    ],
+    "required": null,
+    "deadline_days": null,
+    "next_chain_step": "pala_2",
+    "id": "pala_1"
+  },
+  "pala_2": {
+    "chain": "pala",
+    "step": 2,
+    "title": "осохи шаманов",
+    "type": "deliver",
+    "deliver_items": [
+      {
+        "name": "посох гоблина-шамана",
+        "count": 5
+      }
+    ],
+    "required": null,
+    "deadline_days": 30,
+    "next_chain_step": "pala_3",
+    "id": "pala_2"
+  },
+  "pala_3": {
+    "chain": "pala",
+    "step": 3,
+    "title": "спытание света",
+    "type": "chain",
+    "deliver_items": null,
+    "required": 3,
+    "deadline_days": null,
+    "next_chain_step": null,
+    "id": "pala_3"
+  },
+  "heretic_1": {
+    "chain": "heretic",
+    "step": 1,
+    "title": "лаза тьмы",
+    "type": "deceive",
+    "deliver_items": null,
+    "required": 3,
+    "deadline_days": null,
+    "next_chain_step": "heretic_2",
+    "id": "heretic_1"
+  },
+  "heretic_2": {
+    "chain": "heretic",
+    "step": 2,
+    "title": "Шёпот в темноте",
+    "type": "help",
+    "deliver_items": null,
+    "required": 5,
+    "deadline_days": 20,
+    "next_chain_step": "heretic_3",
+    "id": "heretic_2"
+  },
+  "heretic_3": {
+    "chain": "heretic",
+    "step": 3,
+    "title": "ечать тьмы",
+    "type": "chain",
+    "deliver_items": null,
+    "required": 1,
+    "deadline_days": null,
+    "next_chain_step": null,
+    "id": "heretic_3"
+  }
+}
