@@ -140,7 +140,7 @@ def test_initial_skills_empty():
 
 def test_initial_state_is_exploring():
     state = _default_state()
-    assert state["visible"]["state"] == "exploring"
+    assert state["hidden"]["current_mode"] == "exploring"
 
 
 def test_initial_location_has_name_and_four_exits():
@@ -167,9 +167,10 @@ def test_initial_location_graph_has_starting_node():
     graph = state["hidden"]["location_graph"]
     assert STARTING_NODE_ID in graph
     node = graph[STARTING_NODE_ID]
-    assert set(node.keys()) == set(DIRECTIONS)
-    for direction in DIRECTIONS:
-        assert node[direction] is None
+    assert set(node.keys()) == {"type", "entered", "exits"}
+    assert node["type"] == "старт"
+    assert node["entered"] is True
+    assert set(node["exits"].keys()) == set(DIRECTIONS)
 
 
 def test_initial_reputation_all_roles_zero():
@@ -308,7 +309,7 @@ def test_validate_sleep_counter_negative():
 
 def test_validate_invalid_state_value():
     state = _default_state()
-    state["visible"]["state"] = "meditating"
+    state["hidden"]["current_mode"] = "meditating"
     with pytest.raises(ValueError):
         validate_state(state)
 
@@ -369,7 +370,11 @@ def test_validate_current_node_must_be_in_graph():
 
 def test_validate_location_graph_node_has_all_directions():
     state = _default_state()
-    state["hidden"]["location_graph"][STARTING_NODE_ID] = {"north": None}
+    state["hidden"]["location_graph"][STARTING_NODE_ID] = {
+        "type": "старт",
+        "entered": True,
+        "exits": {"north": None},
+    }
     with pytest.raises(ValueError):
         validate_state(state)
 

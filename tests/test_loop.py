@@ -24,7 +24,8 @@ from burt.bestiary import ENEMIES
 # ─── Общий помощник ────────────────────────────────────────
 
 def make_state(mode="exploring"):
-    """Базовое state: exploring, 4 выхода, стартовая локация."""
+    """Базовое state: exploring, 4 выхода, world-граф старта."""
+    from burt import world
     return {
         "visible": {
             "hp": 10, "hp_max": 10, "mp": 3, "mp_max": 3,
@@ -40,18 +41,11 @@ def make_state(mode="exploring"):
             ],
             "wallet": {"gold": 0, "silver": 5, "copper": 0},
             "skills_visible": [],
-            "state": "exploring",
         },
         "hidden": {
             "current_mode": mode,
             "current_node_id": "start",
-            "location_graph": {
-                "start": {"north": "forest_1", "east": None,
-                          "south": None, "west": None},
-                "forest_1": {"north": None, "east": None,
-                             "south": "start", "west": None},
-            },
-            "location_types": {"start": "старт", "forest_1": "лес"},
+            "location_graph": world.create_start_graph(),
             "hp_raw": 10, "mp_raw": 3,
             "spells": {"element": None, "alignment": None},
             "step": 0, "day": 1,
@@ -210,10 +204,14 @@ class TestExecuteActionExploring:
 
     def test_go_north_moves_and_increments_step(self):
         st = make_state()
-        result = execute_action(Action("go_north", "Go"), st)
-        assert st["hidden"]["current_node_id"] == "forest_1"
+        # rng=4: movement "normal", on-entry "quiet",
+        # + node generation rolls (all 4).
+        result = execute_action(Action("go_north", "Go"), st,
+                                rng=lambda: 4)
+        assert st["hidden"]["current_node_id"] != "start"
         assert st["hidden"]["step"] == 1
-        assert st["visible"]["location"]["name"] == "Forest"
+        # world preset: north from start is "дорога" -> "Road".
+        assert st["visible"]["location"]["name"] == "Road"
         assert isinstance(result, ActionResult)
 
     def test_go_invalid_direction_returns_error(self):

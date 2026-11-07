@@ -67,6 +67,17 @@ COMBAT_ACTIONS = frozenset({"attack", "block", "flee"})
 SLEEP_THRESHOLD = 20
 CRITICAL_HP_RATIO = 0.25
 
+# §23: locations where entering can trigger an ambush/encounter.
+# Mapping: Russian location type -> spawn table key.
+_ENCOUNTER_LOCATIONS = {
+    "лес": "forest",
+    "подземелье": "dungeon",
+    "поле": "field",
+    "степь": "steppe",
+    "болото": "swamp",
+}
+_AMBUSH_LOCATION = "кустарник"  # §32: ambush at thicket
+
 
 def build_menu(visible: dict, state: dict) -> list[Action]:
     """Build available actions from current game state."""
@@ -80,6 +91,8 @@ def build_menu(visible: dict, state: dict) -> list[Action]:
         return [Action(key="exit_dialog", label="Exit dialogue")]
 
     actions: list[Action] = []
+    # TODO(O4): Burt attacks first (initiates combat from exploring).
+    # Deferred until npc.py: no enemy sources in exploring yet.
     actions.append(Action(key="osmotret", label="Look around"))
 
     exits = visible.get("location", {}).get("exits", [])
@@ -186,27 +199,60 @@ def execute_action(action: Action, state: dict, rng=None) -> ActionResult:
             return error_result(f"Invalid direction: {direction}")
         graph = hidden.get("location_graph", {})
         current = hidden.get("current_node_id", "start")
-        if current in graph:
-            node = graph[current]
-            # Support both {north: id, ...} and {exits: {north: id, ...}} shapes.
-            if "exits" in node:
-                next_id = node["exits"].get(direction)
-            else:
-                next_id = node.get(direction)
-            if next_id and next_id in graph:
-                hidden["current_node_id"] = next_id
-                loc_type = hidden.get("location_types", {}).get(next_id, "")
-                visible["location"]["name"] = _resolve_location_name(loc_type, next_id)
-                next_node = graph[next_id]
-                if "exits" in next_node:
-                    visible["location"]["exits"] = list(next_node["exits"].keys())
-                else:
-                    visible["location"]["exits"] = [
-                        d for d in DIRECTIONS if next_node.get(d)
-                    ]
+        if current not in graph:
+            return error_result("current node missing from graph")
+        node = graph[current]
+        if "exits" in node:
+            next_id = node["exits"].get(direction)
+        else:
+            next_id = node.get(direction)
+        if not next_id or next_id not in graph:
+            return error_result(f"no exit {direction}")
+
+        # Movement roll (§10).
+        move_result = dice.resolve_movement(rng()).result
+        if move_result in ("fail_bad", "fail"):
+            return _handle_movement_failure(
+                direction, move_result, hidden,
+            )
+
+        # Move to target node.
+        hidden["current_node_id"] = next_id
+        next_node = graph[next_id]
+
+        # Generate new node contents if not yet entered (§17).
+        if not next_node.get("entered", False):
+            _enter_new_node(graph, next_id, rng)
+            next_node = graph[next_id]
+
+        loc_type = next_node.get("type") or ""
+        visible["location"]["name"] = _resolve_location_name(
+            loc_type, next_id,
+        )
+        if "exits" in next_node:
+            visible["location"]["exits"] = [
+                d for d, t in next_node["exits"].items() if t
+            ]
+        else:
+            visible["location"]["exits"] = [
+                d for d in DIRECTIONS if next_node.get(d)
+            ]
+
         hidden["step"] = hidden.get("step", 0) + 1
-        report = sensory.format_sensory_report(visible)
-        return ActionResult(events=[f"Moved {direction}. {report}"])
+
+        # On-entry encounter roll (O1).
+        combat_report = _maybe_start_combat_on_enter(
+            loc_type, hidden, visible, rng,
+        )
+        if combat_report is not None:
+            return ActionResult(
+                events=[combat_report],
+                direction_moved=direction,
+            )
+        return ActionResult(
+            events=[sensory.format_sensory_report(visible)],
+            direction_moved=direction,
+        )
 
     if action.key == "search":
         hidden["step"] = hidden.get("step", 0) + 1
@@ -349,6 +395,86 @@ def error_result(msg: str) -> ActionResult:
     """Create an error ActionResult."""
     err_str = chr(0x43E)+chr(0x448)+chr(0x438)+chr(0x431)+chr(0x43A)+chr(0x430)
     return ActionResult(events=[err_str + ": " + msg])
+
+
+def _enter_new_node(graph: dict, node_id: str, rng) -> None:
+    """Generate a new node per §17.
+
+    world.enter_node expects roll_size in 1..3 for roll_type=5,
+    in 1..6 for roll_type=6. We normalize before calling.
+    """
+    roll_count = rng()
+    roll_dirs = rng()
+    roll_type = rng()
+    if roll_type == 5:
+        roll_size = (rng() - 1) % 3 + 1  # 1..3
+    else:
+        roll_size = rng()  # 1..6 or ignored
+    world.enter_node(
+        graph, node_id, roll_count, roll_dirs, roll_type, roll_size,
+    )
+
+
+def _start_combat(
+    enemy_keys: list[str],
+    initiative: str,
+    hidden: dict,
+    visible: dict,
+) -> str:
+    """Start combat (§23). Returns combat report."""
+    combat_state = combat.start_combat(enemy_keys, initiative)
+    hidden["combat"] = combat_state.to_dict()
+    hidden["current_mode"] = "combat"
+    burt = _build_burt_stats(visible, hidden)
+    return sensory.format_combat_report(combat_state, burt)
+
+
+def _maybe_start_combat_on_enter(
+    location_type: str,
+    hidden: dict,
+    visible: dict,
+    rng,
+) -> str | None:
+    """Roll encounter on entering a location (O1: on-entry roll).
+
+    Thicket -> always ambush (§32).
+    Dangerous locations -> 1-2 attack (enemy initiative), 3-6 quiet.
+    Safe locations -> no combat.
+    TODO(§10): positive events on 5-6 not implemented yet.
+    """
+    if location_type == _AMBUSH_LOCATION:
+        enemies = spawn.spawn_ambush(rng(), rng())
+        return _start_combat(enemies, "enemy", hidden, visible)
+
+    spawn_key = _ENCOUNTER_LOCATIONS.get(location_type)
+    if spawn_key is None:
+        return None
+
+    roll = rng()
+    if roll <= 2:
+        enemies = spawn.spawn_random(spawn_key, rng(), rng())
+        if enemies:
+            return _start_combat(enemies, "enemy", hidden, visible)
+    return None
+
+
+def _handle_movement_failure(
+    direction: str,
+    move_result: str,
+    hidden: dict,
+) -> ActionResult:
+    """Movement failure (§11).
+
+    TODO(§11): micro-location with 2 exits (back/forward).
+    Simplified: Burt stays in place.
+    """
+    hidden["step"] = hidden.get("step", 0) + 1
+    if move_result == "fail_bad":
+        # TODO(§10): roll random event, may trigger combat.
+        return ActionResult(
+            events=[f"Не удалось пройти {direction}. Плохое событие."]
+        )
+    return ActionResult(events=[f"Не удалось пройти {direction}."])
 
 
 def _resolve_location_name(loc_type: str, node_id: str) -> str:

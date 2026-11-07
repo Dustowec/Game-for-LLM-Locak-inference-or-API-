@@ -13,6 +13,7 @@
 from __future__ import annotations
 
 import copy
+from burt import world
 from typing import Any
 
 # ---------------------------------------------------------------------
@@ -52,7 +53,8 @@ VALID_ELEMENTS: set[str | None] = {None, "fire", "water", "earth", "air"}
 VALID_ALIGNMENTS: set[str | None] = {None, "light", "dark"}
 
 STARTING_LOCATION_NAME: str = "Развилка"
-STARTING_NODE_ID: str = "node_start"
+# Must match world.START_NODE_ID ("start").
+STARTING_NODE_ID: str = "start"
 
 STARTING_HP: int = 10
 STARTING_MP: int = 3
@@ -80,9 +82,7 @@ def create_initial_state(
     if not isinstance(life, int) or life < 1:
         raise ValueError(f"life must be int >= 1, got {life!r}")
 
-    starting_graph = {
-        STARTING_NODE_ID: {direction: None for direction in DIRECTIONS}
-    }
+    starting_graph = world.create_start_graph()
 
     return {
         "meta": {
@@ -125,6 +125,7 @@ def create_initial_state(
             "npcs_here": [],
             "events_here": [],
             "has_room_tonight": False,
+            "current_mode": "exploring",
             "combat": None,
             "dice_log_last": [],
             "pending_events": [],
@@ -181,11 +182,11 @@ def validate_state(state: dict[str, Any]) -> None:
     # visible: сон
     _require_int(visible, "sleep_counter", minimum=0, maximum=SLEEP_FORCED_AT)
 
-    # visible: state
-    if visible.get("state") not in VALID_STATES:
+    # hidden: current_mode
+    if hidden.get("current_mode") not in VALID_STATES:
         raise ValueError(
-            f"visible.state must be one of {VALID_STATES}, "
-            f"got {visible.get('state')!r}"
+            f"hidden.current_mode must be one of {VALID_STATES}, "
+            f"got {hidden.get('current_mode')!r}"
         )
 
     # visible: кошелёк
@@ -249,7 +250,7 @@ def validate_state(state: dict[str, Any]) -> None:
             f"got {spells.get('alignment')!r}"
         )
 
-    # hidden: граф локаций
+    # hidden: граф локаций (world.py shape: {type, entered, exits})
     graph = hidden.get("location_graph")
     if not isinstance(graph, dict) or not graph:
         raise ValueError("hidden.location_graph must be non-empty dict")
@@ -258,10 +259,15 @@ def validate_state(state: dict[str, Any]) -> None:
             raise ValueError(
                 f"hidden.location_graph[{node_id}] must be dict"
             )
-        if set(node.keys()) != set(DIRECTIONS):
+        if "exits" not in node or not isinstance(node["exits"], dict):
             raise ValueError(
-                f"hidden.location_graph[{node_id}] must have "
-                f"exactly directions {DIRECTIONS}, got {set(node.keys())}"
+                f"hidden.location_graph[{node_id}] missing 'exits' dict"
+            )
+        if set(node["exits"].keys()) != set(DIRECTIONS):
+            raise ValueError(
+                f"hidden.location_graph[{node_id}].exits must have "
+                f"exactly directions {DIRECTIONS}, "
+                f"got {set(node['exits'].keys())}"
             )
 
     # hidden: current_node_id

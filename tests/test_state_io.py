@@ -91,15 +91,17 @@ def test_round_trip_preserves_nested_structures(state_path: Path, sample_state):
         {"name": "меч", "count": 1},
         {"name": "фляга с водой", "count": 1, "charges": 2, "charges_max": 2},
     ]
-    sample_state["hidden"]["location_graph"]["node_start"]["north"] = "node_2"
+    sample_state["hidden"]["location_graph"]["start"]["exits"]["north"] = "node_2"
     sample_state["hidden"]["location_graph"]["node_2"] = {
-        "north": None, "south": "node_start", "east": None, "west": None,
+        "type": "лес",
+        "entered": True,
+        "exits": {"north": None, "south": "start", "east": None, "west": None},
     }
     sample_state["hidden"]["current_node_id"] = "node_2"
     save_state(state_path, sample_state)
     loaded = load_state(state_path)
     assert loaded["visible"]["inventory"][1]["charges"] == 2
-    assert loaded["hidden"]["location_graph"]["node_start"]["north"] == "node_2"
+    assert loaded["hidden"]["location_graph"]["start"]["exits"]["north"] == "node_2"
     assert loaded["hidden"]["current_node_id"] == "node_2"
 
 

@@ -13,6 +13,7 @@ from burt.bestiary import ENEMIES
 
 
 def make_state(mode="exploring"):
+    from burt import world
     return {
         "visible": {
             "hp": 10, "hp_max": 10, "mp": 3, "mp_max": 3,
@@ -25,11 +26,7 @@ def make_state(mode="exploring"):
         },
         "hidden": {
             "current_mode": mode, "current_node_id": "start",
-            "location_graph": {
-                "start": {"north": "forest_1", "east": None, "south": None, "west": None},
-                "forest_1": {"north": None, "east": None, "south": "start", "west": None},
-            },
-            "location_types": {"start": "старт", "forest_1": "лес"},
+            "location_graph": world.create_start_graph(),
             "room_tonight": False, "day": 1, "step": 0, "diary_entries": [],
         },
     }
@@ -90,7 +87,7 @@ class TestFullCycleExploration:
         llm_response = "Going north.\nункт 2\n"
         chosen = parse_choice(llm_response, menu)
         assert chosen.key == "go_north"
-        result = execute_action(chosen, st)
+        result = execute_action(chosen, st, rng=lambda: 4)
         assert len(result.events) > 0
         assert st["hidden"]["step"] == 1
 
@@ -268,9 +265,9 @@ class TestStateMutationConsistency:
                 go_action = a
                 break
         assert go_action is not None
-        execute_action(go_action, st)
+        execute_action(go_action, st, rng=lambda: 4)
         new_name = st["visible"]["location"]["name"]
-        assert new_name != ""
+        assert new_name == "Road"  # world preset: north = дорога
 
     def test_hp_restored_after_sleep(self):
         st = make_state()
