@@ -5,3 +5,4 @@ __pycache__/
 logs/
 crashes/
 *.log
+COMMIT_MSG.txt
