@@ -57,7 +57,8 @@ What was created:
   - tests/test_loop.py          [MODIFIED] make_state + 1 test
   - tests/test_integration.py   [MODIFIED] make_state + 1 test
   - HANDOFFs/HANDOFF-9.md       [NEW] this file
-
+  - tests/test_loop_movement_events.py      [NEW] 10 tests
+  - _update_handoff*.py                     [TEMP cleanup]
 What was achieved:
 
   1. state.py aligned with world.py:
@@ -222,17 +223,35 @@ Search fixes (HANDOFF-9.2, 12.11.2026): COMPLETED
       - search uses rng() instead of dice.roll_d6() (deterministic)
       - 4 new tests added
 
+Positive movement events §10 (HANDOFF-9.3 → 9.4, 12.11.2026): COMPLETED
+       - burt/dice.py: MovementEventResult dataclass + resolve_movement_event()
+         * roll 5 → loot: gold = rng() (1..6), event_type="loot"
+         * roll 6 → blessing: hp_restore = min(rng(), hp_max),
+           mp_restore = min(rng(), mp_max), event_type="blessing"
+         * rolls 1–4 → nothing (defensive; loop calls only on 5–6)
+         * description = readable English text ("You found some gold.",
+           "A blessing restores your vitality."), NOT raw keys
+       - burt/loop.py go_ handler: after on-entry combat check,
+         if move_roll in (5, 6) and NO combat started:
+           apply ev (gold→wallet, hp/mp restore capped, description→events)
+         * Order: on-entry FIRST, positive event ONLY if no combat
+         * move_roll saved before _maybe_start_combat_on_enter to avoid
+           consuming extra rng() — separate rng() call for gold/blessing
+       - visible.get("hp_max"/"mp_max") used (real values, not defaults)
+       - tests/test_loop_movement_events.py: 10 new tests
+
 ---------------------------------------------------------------------
 QUICK START COMMANDS FOR NEXT SESSION
 ---------------------------------------------------------------------
 
   cd E:\Butr-Ai
-   .\.venv\Scripts\pytest.exe tests/ -q          # verify 1335 pass
+   .\.venv\Scripts\pytest.exe tests/ -q          # verify 1345 pass
    .\.venv\Scripts\pytest.exe tests/test_loop_combat_start.py -v # 45
    .\.venv\Scripts\pytest.exe tests/test_loop.py -v             # 37
    .\.venv\Scripts\pytest.exe tests/test_state.py -v            # ~60
    .\.venv\Scripts\pytest.exe tests/test_state_io.py -v         # ~30
    .\.venv\Scripts\pytest.exe tests/test_loop_search_fix.py -v  # 4
+   .\.venv\Scripts\pytest.exe tests/test_loop_movement_events.py -v  # 10
 
 MEMORY AID:
   - loop.execute_action(action, state, rng=None)
@@ -259,6 +278,10 @@ MEMORY AID:
     * roll=1 -> stone (1d6), roll=2 -> tree (2d6)
     * roll=3 -> lightning (3d6), roll=4 -> god_wrath (1×lvl)
   - dice.calculate_micro_damage(micro_event, rng) -> int
+   - dice.resolve_movement_event(roll, level, rng, hp_max, mp_max) -> MovementEventResult
+     * roll 5 → loot: gold=rng() (1..6); roll 6 → blessing: hp/mp restore capped
+     * rolls 1–4 → nothing; description = readable English text
+     * called from loop.py go_ handler only when move_roll in (5,6) AND no combat
   - BurtStats has DEFAULTS for damage/master/modifier
   - hidden["enemies"] is DEAD - use hidden["combat"]
   - visible["state"] is DEAD - use hidden["current_mode"]
@@ -267,9 +290,9 @@ MEMORY AID:
   - Player name in Russian: "Бурт" (not "Бёрт")
   - Git is CLEAN - commit before big changes, always.
 
-TEST COUNTER: 1335 passed.
+TEST COUNTER: 1345 passed.
   Last verified: 12.11.2026
-  Added: 17 micro-location tests (HANDOFF-9.1) + 4 search fix tests (HANDOFF-9.2)
+  Added: 17 micro-location (HANDOFF-9.1) + 4 search fix (HANDOFF-9.2) + 10 positive movement events (HANDOFF-9.3/9.4)
 
 =====================================================================
 END OF HANDOFF 9.
