@@ -5,4 +5,4 @@ __pycache__/
 logs/
 crashes/
 *.log
-COMMIT_MSG.txt
+COMMIT_MSG.txtstate.json

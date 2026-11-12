@@ -59,7 +59,7 @@ async def create_chat_completion(
     backend = config.BACKEND.lower() if config.BACKEND else "lm_studio"
     base_url = _BASE_URLS.get(backend, _BASE_URLS["lm_studio"])
     
-    url = f"{base_url}/v1/chat/completions"
+    url = f"{base_url}/chat/completions"
     
     payload = {
         "model": _MODEL,

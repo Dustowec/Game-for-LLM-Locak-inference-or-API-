@@ -1,4 +1,4 @@
-"""Loop -- section 26 TZ v0.7.0.
+"""Loop — section 26 spec v0.7.0.
 
 Synchronous game-loop core: build_menu, parse_choice, execute_action.
 
@@ -72,7 +72,7 @@ SLEEP_THRESHOLD = 20
 CRITICAL_HP_RATIO = 0.25
 
 # §23: locations where entering can trigger an ambush/encounter.
-# Mapping: Russian location type -> spawn table key.
+# Mapping: English location type -> spawn table key.
 _ENCOUNTER_LOCATIONS = {
     "forest": "forest",
     "dungeon": "dungeon",
@@ -121,14 +121,18 @@ def build_menu(visible: dict, state: dict) -> list[Action]:
         actions.append(Action(key="sleep", label="Sleep"))
 
     inventory = visible.get("inventory", [])
+    has_food = False
+    has_water = False
     for item in inventory:
         name = item.get("name", "").lower()
-        food_ru = chr(0x445)+chr(0x43B)+chr(0x435)+chr(0x431)
-        water_ru = chr(0x432)+chr(0x43E)+chr(0x434)+chr(0x430)
-        if "bread" in name or "food" in name or food_ru in name:
-            actions.append(Action(key="eat_food", label="Eat food"))
-        if "water" in name or chr(0x432)+chr(0x43E)+chr(0x434) in name:
-            actions.append(Action(key="drink_water", label="Drink water"))
+        if name in ("bread", "food", "dried_fish", "fish"):
+            has_food = True
+        if name in ("water", "waterskin", "large_waterskin"):
+            has_water = True
+    if has_food:
+        actions.append(Action(key="eat_food", label="Eat food"))
+    if has_water:
+        actions.append(Action(key="drink_water", label="Drink water"))
 
     return actions
 
@@ -164,27 +168,61 @@ def _build_combat_menu(visible: dict, state: dict) -> list[Action]:
 
 
 def parse_choice(user_text: str, actions: list[Action]) -> Action:
-    """Parse LLM response and return the chosen Action."""
+    """Parse LLM response and return the chosen Action.
+
+    Strategy (in order):
+    1. Look for a line starting with "CHOICE:" (case-insensitive).
+       - After CHOICE: try int index -> actions[idx]
+       - Try action key match (e.g. "attack_wolf_1")
+       - Try label match (e.g. "Attack wolf")
+       - Try substring match (e.g. "attack" in text)
+    2. Fallback: find any action label/key mentioned in the text.
+    3. Fallback: first action (index 0).
+    """
     if not actions:
         return Action(key="osmotret", label="Look around")
 
+    # 1. CHOICE: prefix
     for line in user_text.splitlines():
         stripped = line.strip()
-        if len(stripped) >= 2 and ord(stripped[0]) == 0x42B and stripped[1] == ':':
-            num_str = stripped[2:].strip()
+        if stripped.upper().startswith("CHOICE:"):
+            choice = stripped[len("CHOICE:"):].strip()
+
+            # 1a. numeric index
             try:
-                idx = int(num_str)
+                idx = int(choice)
                 if 0 <= idx < len(actions):
                     return actions[idx]
             except ValueError:
                 pass
 
+            # 1b. action key (e.g. "attack_wolf_1")
+            choice_lower = choice.lower()
+            for action in actions:
+                if action.key.lower() == choice_lower:
+                    return action
+
+            # 1c. label match (e.g. "Attack wolf")
+            for action in actions:
+                if action.label.lower() == choice_lower:
+                    return action
+
+            # 1d. substring: choice contains key or label
+            for action in actions:
+                if action.key.lower() in choice_lower:
+                    return action
+                if action.label.lower() in choice_lower:
+                    return action
+
+    # 2. Fallback: label/key anywhere in text
     text_lower = user_text.lower()
     for action in actions:
-        label_lower = action.label.lower()
-        if label_lower in text_lower or any(word in text_lower for word in label_lower.split()):
+        if action.label.lower() in text_lower:
+            return action
+        if action.key.lower() in text_lower:
             return action
 
+    # 3. Fallback: first action
     return actions[0]
 
 
@@ -202,8 +240,7 @@ def execute_action(action: Action, state: dict, rng=None) -> ActionResult:
     if action.key == "osmotret":
         hidden["step"] = hidden.get("step", 0) + 1
         report = sensory.format_sensory_report(visible)
-        osm_str = chr(0x43E)+chr(0x441)+chr(0x43C)+chr(0x43E)+chr(0x442)+chr(0x440)
-        return ActionResult(events=[osm_str, report])
+        return ActionResult(events=["You look around.", report])
 
     # ── Micro-location exits (§11) ──────────────────────────
     # Must be BEFORE the generic go_ handler below.
@@ -258,7 +295,6 @@ def execute_action(action: Action, state: dict, rng=None) -> ActionResult:
                 d for d, t in node["exits"].items() if t
             ]
         hidden["step"] = hidden.get("step", 0) + 1
-        # On-entry encounter roll (O1).
         combat_report = _maybe_start_combat_on_enter(
             loc_type, hidden, visible, rng,
         )
@@ -284,7 +320,6 @@ def execute_action(action: Action, state: dict, rng=None) -> ActionResult:
         if not next_id or next_id not in graph:
             return error_result(f"no exit {direction}")
 
-        # Movement roll (§10).
         move_roll = rng()
         move_result = dice.resolve_movement(move_roll).result
         if move_result in ("fail_bad", "fail"):
@@ -292,11 +327,9 @@ def execute_action(action: Action, state: dict, rng=None) -> ActionResult:
                 direction, move_result, hidden, visible, rng,
             )
 
-        # Move to target node.
         hidden["current_node_id"] = next_id
         next_node = graph[next_id]
 
-        # Generate new node contents if not yet entered (§17).
         if not next_node.get("entered", False):
             _enter_new_node(graph, next_id, rng)
             next_node = graph[next_id]
@@ -316,20 +349,15 @@ def execute_action(action: Action, state: dict, rng=None) -> ActionResult:
 
         hidden["step"] = hidden.get("step", 0) + 1
 
-        # On-entry encounter roll (O1).
         combat_report = _maybe_start_combat_on_enter(
             loc_type, hidden, visible, rng,
         )
         if combat_report is not None:
-            # Combat started — do NOT apply positive event.
-            # Order: on-entry first, then positive event only if no combat.
             return ActionResult(
                 events=[combat_report],
                 direction_moved=direction,
             )
 
-        # Positive event on great movement (§10, HANDOFF-9.3).
-        # Only applies if on-entry did NOT start combat.
         if move_roll in (5, 6):
             ev = resolve_movement_event(
                 move_roll,
@@ -385,8 +413,45 @@ def execute_action(action: Action, state: dict, rng=None) -> ActionResult:
         hidden["day"] = hidden.get("day", 1) + 1
         hidden["step"] = 0
         visible["date"] = f"{hidden['day']} day(s)"
-        son_str = chr(0x441)+chr(0x43E)+chr(0x43D)
-        return ActionResult(events=[son_str, sensory.format_sensory_report(visible)])
+        return ActionResult(events=["You sleep.", sensory.format_sensory_report(visible)])
+
+    if action.key == "eat_food":
+        eat, new_hp = hunger.apply_eat(
+            visible.get("eat", False),
+            visible.get("hp", 10),
+            visible.get("hp_max", 10),
+        )
+        visible["eat"] = eat
+        visible["hp"] = new_hp
+        hidden["hp_raw"] = new_hp
+        # Remove one food item from inventory
+        inventory = visible.get("inventory", [])
+        for i, item in enumerate(inventory):
+            name = item.get("name", "").lower()
+            if name in ("bread", "food", "dried_fish", "fish"):
+                item["count"] -= 1
+                if item["count"] <= 0:
+                    inventory.pop(i)
+                break
+        hidden["step"] = hidden.get("step", 0) + 1
+        return ActionResult(
+            events=["You eat.", sensory.format_sensory_report(visible)],
+        )
+
+    if action.key == "drink_water":
+        # Water doesn't restore HP directly; just consumes item.
+        inventory = visible.get("inventory", [])
+        for i, item in enumerate(inventory):
+            name = item.get("name", "").lower()
+            if name in ("water", "waterskin", "large_waterskin"):
+                item["count"] -= 1
+                if item["count"] <= 0:
+                    inventory.pop(i)
+                break
+        hidden["step"] = hidden.get("step", 0) + 1
+        return ActionResult(
+            events=["You drink some water.", sensory.format_sensory_report(visible)],
+        )
 
     if mode == "combat":
         return _execute_combat(action, state, rng)
@@ -438,10 +503,10 @@ def _execute_combat(action: Action, state: dict, rng) -> ActionResult:
     except ValueError as ex:
         return error_result(str(ex))
 
-    visible["hp"] = result.burt.hp
-    visible["mp"] = result.burt.mp
-    hidden["hp_raw"] = result.burt.hp
-    hidden["mp_raw"] = result.burt.mp
+    visible["hp"] = max(0, result.burt.hp)
+    visible["mp"] = max(0, result.burt.mp)
+    hidden["hp_raw"] = visible["hp"]
+    hidden["mp_raw"] = visible["mp"]
 
     events: list[str] = list(result.events_llm)
     action_result = ActionResult(events=events)
@@ -496,8 +561,7 @@ def should_sleep(visible: dict, state: dict) -> bool:
 
 def error_result(msg: str) -> ActionResult:
     """Create an error ActionResult."""
-    err_str = chr(0x43E)+chr(0x448)+chr(0x438)+chr(0x431)+chr(0x43A)+chr(0x430)
-    return ActionResult(events=[err_str + ": " + msg])
+    return ActionResult(events=["Error: " + msg])
 
 
 def _enter_new_node(graph: dict, node_id: str, rng) -> None:
@@ -543,7 +607,6 @@ def _maybe_start_combat_on_enter(
     Thicket -> always ambush (§32).
     Dangerous locations -> 1-2 attack (enemy initiative), 3-6 quiet.
     Safe locations -> no combat.
-    TODO(§10): positive events on 5-6 not implemented yet.
     """
     if location_type == _AMBUSH_LOCATION:
         enemies = spawn.spawn_ambush(rng(), rng())
@@ -589,22 +652,18 @@ def _handle_movement_failure(
     else:
         next_id = current_node_data.get(direction)
 
-    # Roll micro-event type.
     event_roll = rng()
     level = visible.get("level", 1)
     micro_event = resolve_micro_event(event_roll, level)
 
-    # Calculate damage.
     damage = calculate_micro_damage(micro_event, rng)
 
-    # Apply damage to HP.
     new_hp = visible.get("hp", 10) - damage
     if new_hp < 0:
         new_hp = 0
     visible["hp"] = new_hp
     hidden["hp_raw"] = new_hp
 
-    # Build event description.
     if damage > 0:
         event_msg = (
             f"Failed to move {direction}. "
@@ -617,7 +676,6 @@ def _handle_movement_failure(
             f"Micro-event: {micro_event.event_type}."
         )
 
-    # Store micro-location state.
     hidden["micro_location"] = {
         "active": True,
         "source_node": current_node,
@@ -628,22 +686,16 @@ def _handle_movement_failure(
     }
 
     if move_result == "fail_bad":
-        # §10 (HANDOFF-9.5): roll bad event on fail_bad (movement roll=1).
-        # Roll 2 (fail) does NOT call resolve_bad_movement_event.
-
-        # Determine if current location is dangerous.
         current_node_data = graph.get(current_node, {})
         location_type = current_node_data.get("type") or ""
         is_dangerous = location_type in _ENCOUNTER_LOCATIONS
 
-        # Roll bad event.
         bad_roll = rng()
         level = visible.get("level", 1)
         ev = resolve_bad_movement_event(
             bad_roll, level=level, rng=rng, is_dangerous=is_dangerous,
         )
 
-        # Apply extra damage on top of micro-location damage.
         if ev.extra_damage > 0:
             new_hp = visible.get("hp", 10) - ev.extra_damage
             if new_hp < 0:
@@ -651,16 +703,13 @@ def _handle_movement_failure(
             visible["hp"] = new_hp
             hidden["hp_raw"] = new_hp
 
-        # Build events list.
         events_list = [event_msg]
         if ev.event_type != "nothing":
             events_list.append(ev.description)
 
-        # Check if Burt is dead before starting combat.
         if visible.get("hp", 0) <= 0:
             return ActionResult(events=events_list, game_over=True)
 
-        # Start combat if applicable.
         if ev.starts_combat:
             spawn_key = _ENCOUNTER_LOCATIONS.get(location_type)
             if spawn_key is not None:

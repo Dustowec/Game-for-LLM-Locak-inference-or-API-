@@ -173,10 +173,10 @@ class TestParseChoice:
         return [Action("a", "A"), Action("b", "B")]
 
     def test_numbered_zero(self):
-        assert parse_choice("Ы: 0", self._two()).key == "a"
+        assert parse_choice("CHOICE: 0", self._two()).key == "a"
 
     def test_numbered_one(self):
-        assert parse_choice("Ы: 1", self._two()).key == "b"
+        assert parse_choice("CHOICE: 1", self._two()).key == "b"
 
     def test_prefix_match_by_label(self):
         actions = [Action("go_north", "на сервер")]
@@ -186,10 +186,10 @@ class TestParseChoice:
         assert parse_choice("qwerty", self._two()).key == "a"
 
     def test_empty_menu_returns_osmotret(self):
-        assert parse_choice("Ы: 0", []).key == "osmotret"
+        assert parse_choice("CHOICE: 0", []).key == "osmotret"
 
     def test_invalid_number_fallback(self):
-        assert parse_choice("Ы: 99", self._two()).key == "a"
+        assert parse_choice("CHOICE: 99", self._two()).key == "a"
 
 
 # ─── execute_action: мирные действия ───────────────────────
@@ -217,7 +217,7 @@ class TestExecuteActionExploring:
     def test_go_invalid_direction_returns_error(self):
         st = make_state()
         result = execute_action(Action("go_up", "Go"), st)
-        assert any("ошибка" in ev.lower() for ev in result.events)
+        assert any("error" in ev.lower() for ev in result.events)
         assert st["hidden"]["step"] == 0
 
     def test_sleep_restores_hp_and_mp(self):
@@ -244,7 +244,7 @@ class TestExecuteActionExploring:
     def test_unknown_action_returns_error(self):
         st = make_state()
         result = execute_action(Action("teleport", "TP"), st)
-        assert any("ошибка" in ev.lower() for ev in result.events)
+        assert any("error" in ev.lower() for ev in result.events)
 
 
 # ─── should_sleep ──────────────────────────────────────────
@@ -284,7 +284,7 @@ class TestErrorResult:
         r = error_result("boom")
         assert len(r.events) == 1
         assert "boom" in r.events[0]
-        assert "ошибка" in r.events[0].lower()
+        assert "error" in r.events[0].lower()
 
 
 # ─── _resolve_location_name ────────────────────────────────

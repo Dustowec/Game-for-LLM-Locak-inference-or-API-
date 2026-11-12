@@ -1,17 +1,17 @@
 """
-Бой — §23 ТЗ v0.7.0.
+Combat — §23 spec v0.7.0.
 
-Порядок раунда:
-  1. Free strike (если инициатива врага, первый раунд):
-     каждый живой враг бьёт по таблице атаки. Блока нет.
-  2. Ход Бурта: attack / block / flee.
-  3. Ходы врагов по очереди:
-     - attack и flee: таблица атаки врага, свой бросок;
-     - block: таблица блока, свой бросок, counter с 6 → тому же врагу.
-  4. Раунд++.
+Round order:
+  1. Free strike (enemy initiative, first round):
+     each living enemy strikes by attack table. No block.
+  2. Burt's turn: attack / block / flee.
+  3. Enemy turns in order:
+     - attack and flee: enemy attack table, own roll;
+     - block: block table, own roll, counter on 6 → same enemy.
+  4. Round++.
 
-Чистое ядро: без I/O, без asyncio, без LLM.
-Кубики бросает rng — функция, возвращающая 1..6.
+Pure core: no I/O, no asyncio, no LLM.
+Dice are rolled by rng — a function returning 1..6.
 """
 
 from __future__ import annotations
@@ -25,11 +25,11 @@ from burt.bestiary import ENEMIES, Enemy
 Rng = Callable[[], int]
 
 
-# ─── Данные ────────────────────────────────────────────────
+# ─── Data ──────────────────────────────────────────────────
 
 @dataclass
 class EnemyInstance:
-    """Конкретный враг в бою."""
+    """A concrete enemy in combat."""
 
     id: str
     key: str
@@ -101,7 +101,7 @@ class CombatState:
 
 @dataclass
 class BurtStats:
-    """Срез Бурта для боя. Собирает оркестратор."""
+    """Burt's snapshot for combat. Assembled by the orchestrator."""
 
     hp: int
     hp_max: int
@@ -123,7 +123,7 @@ class RoundResult:
     outcome: str = "ongoing"
 
 
-# ─── Создание боя ──────────────────────────────────────────
+# ─── Combat creation ───────────────────────────────────────
 
 def start_combat(enemy_keys: list[str], initiative: str) -> CombatState:
     if not enemy_keys:
@@ -154,7 +154,12 @@ def start_combat(enemy_keys: list[str], initiative: str) -> CombatState:
     )
 
 
-# ─── Помощники ─────────────────────────────────────────────
+# ─── Helpers ───────────────────────────────────────────────
+
+def _clamp_hp(hp: int) -> int:
+    """HP never drops below 0 (validate_state invariant)."""
+    return max(0, hp)
+
 
 def _alive(combat: CombatState) -> list[EnemyInstance]:
     return [e for e in combat.enemies if e.alive]
@@ -176,7 +181,7 @@ def _kill(enemy: EnemyInstance) -> None:
     enemy.alive = False
 
 
-# ─── Ход Бурта ─────────────────────────────────────────────
+# ─── Burt's turn ───────────────────────────────────────────
 
 def _burt_attack(
     combat: CombatState,
@@ -211,7 +216,7 @@ def _burt_attack(
     else:
         events_llm.append(f"You missed {name}.")
 
-    return replace(burt, hp=burt.hp - result.self_penalty_hp)
+    return replace(burt, hp=_clamp_hp(burt.hp - result.self_penalty_hp))
 
 
 def _burt_block(
@@ -229,7 +234,6 @@ def _burt_flee(
     events_llm: list[str],
     events_tech: list[str],
 ) -> tuple[BurtStats, str]:
-    # Из боя с драконом flee нельзя.
     if any(_template(e).tags and "no_flee" in _template(e).tags
            for e in _alive(combat)):
         raise ValueError("cannot flee from dragon")
@@ -239,7 +243,6 @@ def _burt_flee(
     t = _template(first)
 
     if roll in (3, 4):
-        # На каждого живого врага — свой hit_roll.
         total_incoming = 0
         for enemy in _alive(combat):
             hit_roll = rng()
@@ -256,7 +259,7 @@ def _burt_flee(
             )
         events_tech.append(f"flee roll={roll} escaped=True")
         events_llm.append("You fled.")
-        return replace(burt, hp=burt.hp - total_incoming), "burt_fled"
+        return replace(burt, hp=_clamp_hp(burt.hp - total_incoming)), "burt_fled"
 
     res = dice.resolve_flee(
         roll,
@@ -277,13 +280,13 @@ def _burt_flee(
             if target.hp <= 0:
                 _kill(target)
         events_llm.append("You fled.")
-        return replace(burt, hp=burt.hp - res.incoming_damage), "burt_fled"
+        return replace(burt, hp=_clamp_hp(burt.hp - res.incoming_damage)), "burt_fled"
 
     events_llm.append("Failed to flee.")
-    return replace(burt, hp=burt.hp - res.incoming_damage), "ongoing"
+    return replace(burt, hp=_clamp_hp(burt.hp - res.incoming_damage)), "ongoing"
 
 
-# ─── Ход врага ─────────────────────────────────────────────
+# ─── Enemy turn ────────────────────────────────────────────
 
 def _try_cast(
     enemy: EnemyInstance,
@@ -293,11 +296,6 @@ def _try_cast(
     events_llm: list[str],
     events_tech: list[str],
 ) -> tuple[BurtStats, bool]:
-    """Попробовать каст: если есть мана → каст, иначе False.
-
-    Возвращает (new_burt, casted). casted=True если каст выполнен.
-    Это НЕ _enemy_spell — здесь нет block_roll, просто бросок атаки.
-    """
     has_spell = (
         template.spell_damage_min is not None
         and template.spell_damage_max is not None
@@ -305,11 +303,11 @@ def _try_cast(
     if not has_spell or enemy.mp < template.spell_cost:
         return burt, False
 
-    # Кастуем
     enemy.mp -= template.spell_cost
     roll = rng()
-    attack = dice.resolve_attack(roll,
-        template.spell_damage_min, template.spell_damage_max)
+    attack = dice.resolve_attack(
+        roll, template.spell_damage_min, template.spell_damage_max,
+    )
     events_tech.append(
         f"{enemy.id} try_cast: roll={roll} hit={attack.hit} "
         f"dmg={attack.damage} mp={enemy.mp}"
@@ -318,7 +316,7 @@ def _try_cast(
         events_llm.append(f"{template.name} missed with a spell.")
         return burt, True
     events_llm.append(f"{template.name} hurls fire.")
-    return replace(burt, hp=burt.hp - attack.damage), True
+    return replace(burt, hp=_clamp_hp(burt.hp - attack.damage)), True
 
 
 def _try_melee(
@@ -329,7 +327,6 @@ def _try_melee(
     events_llm: list[str],
     events_tech: list[str],
 ) -> BurtStats:
-    """Мили-атака врага. Без блока."""
     roll = rng()
     modifier = -1 if "staff_penalty" in template.tags else 0
     attack = dice.resolve_attack(
@@ -344,7 +341,7 @@ def _try_melee(
         events_llm.append(f"{template.name} missed.")
         return burt
     events_llm.append(f"{template.name} hits you.")
-    return replace(burt, hp=burt.hp - attack.damage)
+    return replace(burt, hp=_clamp_hp(burt.hp - attack.damage))
 
 
 def _enemy_spell(
@@ -356,28 +353,14 @@ def _enemy_spell(
     events_llm: list[str],
     events_tech: list[str],
 ) -> BurtStats:
-    """Заклинание врага.
-
-    Схема:
-      1. Потратить ману (всегда, это попытка каста).
-      2. Бросить d6 на атаку заклинания.
-      3. Определить попадание по таблице атаки (§10).
-      4. Если выбран блок → применить таблицу блока к входящему урону.
-         Контратака работает из блока вне зависимости от попадания.
-      5. Если блока нет → урон равен damage при hit, 0 при miss.
-    """
     spell_min = template.spell_damage_min
     spell_max = template.spell_damage_max
 
-    # Всегда тратим ману (враг пытается cast)
     enemy.mp -= template.spell_cost
-
-    # Всегда бросаем кубик атаки
     attack_roll = rng()
     attack = dice.resolve_attack(attack_roll, spell_min, spell_max)
 
     if block_roll is not None:
-        # Игрок выбрал блок — применяем таблицу блока
         block = dice.resolve_block(
             block_roll, spell_min, spell_max,
             counter_min=spell_min, counter_max=spell_max,
@@ -390,7 +373,6 @@ def _enemy_spell(
             f"self_penalty={block.self_penalty_hp} "
             f"counter={block.counter_damage}"
         )
-        # Урон идёт только если атака попала
         outgoing_damage = block.incoming_damage if attack.hit else 0
         if block.counter_damage:
             enemy.hp -= block.counter_damage
@@ -399,10 +381,9 @@ def _enemy_spell(
         events_llm.append(f"{template.name} hurls fire, you block.")
         return replace(
             burt,
-            hp=burt.hp - outgoing_damage - block.self_penalty_hp,
+            hp=_clamp_hp(burt.hp - outgoing_damage - block.self_penalty_hp),
         )
 
-    # Нет блока — обычный результат атаки
     events_tech.append(
         f"{enemy.id} spell: roll={attack_roll} hit={attack.hit} "
         f"dmg={attack.damage} mp={enemy.mp}"
@@ -411,7 +392,7 @@ def _enemy_spell(
         events_llm.append(f"{template.name} missed with fire.")
         return burt
     events_llm.append(f"{template.name} hurls fire.")
-    return replace(burt, hp=burt.hp - attack.damage)
+    return replace(burt, hp=_clamp_hp(burt.hp - attack.damage))
 
 
 def _enemy_melee(
@@ -444,7 +425,7 @@ def _enemy_melee(
         events_llm.append(f"{template.name} strikes, you block.")
         return replace(
             burt,
-            hp=burt.hp - block.incoming_damage - block.self_penalty_hp,
+            hp=_clamp_hp(burt.hp - block.incoming_damage - block.self_penalty_hp),
         )
 
     roll = rng()
@@ -461,55 +442,7 @@ def _enemy_melee(
         events_llm.append(f"{template.name} missed.")
         return burt
     events_llm.append(f"{template.name} hits you.")
-    return replace(burt, hp=burt.hp - attack.damage)
-
-
-def _enemy_melee(
-    enemy: EnemyInstance,
-    template: Enemy,
-    burt: BurtStats,
-    rng: Rng,
-    block_roll: Optional[int],
-    events_llm: list[str],
-    events_tech: list[str],
-) -> BurtStats:
-    if block_roll is not None:
-        block = dice.resolve_block(
-            block_roll,
-            template.damage_min,
-            template.damage_max,
-            counter_min=template.damage_min,
-            counter_max=template.damage_max,
-        )
-        events_tech.append(
-            f"block vs {enemy.id}: roll={block_roll} "
-            f"incoming={block.incoming_damage} counter={block.counter_damage}"
-        )
-        if block.counter_damage:
-            enemy.hp -= block.counter_damage
-            if enemy.hp <= 0:
-                _kill(enemy)
-        events_llm.append(f"{template.name} strikes, you block.")
-        return replace(
-            burt,
-            hp=burt.hp - block.incoming_damage - block.self_penalty_hp,
-        )
-
-    roll = rng()
-    modifier = -1 if "staff_penalty" in template.tags else 0
-    attack = dice.resolve_attack(
-        roll, template.damage_min, template.damage_max,
-        master=0, modifier=modifier,
-    )
-    events_tech.append(
-        f"{enemy.id} attack: roll={roll} modifier={modifier} "
-        f"hit={attack.hit} dmg={attack.damage}"
-    )
-    if not attack.hit:
-        events_llm.append(f"{template.name} missed.")
-        return burt
-    events_llm.append(f"{template.name} hits you.")
-    return replace(burt, hp=burt.hp - attack.damage)
+    return replace(burt, hp=_clamp_hp(burt.hp - attack.damage))
 
 
 def _enemy_turn(
@@ -522,13 +455,11 @@ def _enemy_turn(
 ) -> BurtStats:
     template = _template(enemy)
 
-    # Шаман: каст, пока MP > 0.
     if template.spell_damage_min is not None and enemy.mp > 0:
         return _enemy_spell(
             enemy, template, burt, rng, block_roll, events_llm, events_tech,
         )
 
-    # Dragon: дыхание на turns_taken 0, 3, 6 (пока breaths_used < max).
     use_breath = (
         template.breath_max > 0
         and enemy.turns_taken % 3 == 0
@@ -550,14 +481,14 @@ def _enemy_turn(
             events_llm.append("Dragon missed with breath.")
             return burt
         events_llm.append("Dragon breathes fire.")
-        return replace(burt, hp=burt.hp - attack.damage)
+        return replace(burt, hp=_clamp_hp(burt.hp - attack.damage))
 
     return _enemy_melee(
         enemy, template, burt, rng, block_roll, events_llm, events_tech,
     )
 
 
-# ─── Раунд ─────────────────────────────────────────────────
+# ─── Round ─────────────────────────────────────────────────
 
 def resolve_round(
     combat: CombatState,
@@ -591,7 +522,7 @@ def resolve_round(
                 outcome="burt_died",
             )
 
-    # Ход Бурта.
+    # Burt's turn.
     outcome = "ongoing"
     block_chosen = False
 
@@ -627,7 +558,6 @@ def resolve_round(
             outcome="burt_won",
         )
 
-    # Побег не удался — все враги получают ОДНО действие.
     if action == "flee":
         for enemy in _alive(combat):
             if burt.hp <= 0:
@@ -638,18 +568,15 @@ def resolve_round(
                 and t.spell_damage_max is not None
             )
             if has_spell and enemy.mp >= t.spell_cost:
-                # Кастуем если есть мана
                 burt, _ = _try_cast(
                     enemy, t, burt, rng, events_llm, events_tech,
                 )
             else:
-                # Иначе мили атака
                 burt = _try_melee(
                     enemy, t, burt, rng, events_llm, events_tech,
                 )
                 enemy.turns_taken += 1
 
-    # Ходы врагов (кроме случая побег — там уже отработали выше).
     if action != "flee":
         for enemy in _alive(combat):
             if burt.hp <= 0:
@@ -661,7 +588,7 @@ def resolve_round(
             )
             enemy.turns_taken += 1
 
-    # Итог.
+    # Result.
     if burt.hp <= 0:
         combat.active = False
         return RoundResult(

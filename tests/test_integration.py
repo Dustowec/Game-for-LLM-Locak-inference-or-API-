@@ -72,11 +72,11 @@ class TestFullCycleExploration:
         menu = build_menu(st["visible"], st)
         keys = [a.key for a in menu]
         assert "osmotret" in keys
-        llm_response = "I look around.\nункт 1\n"
+        llm_response = "I look around.\nCHOICE: 0\n"
         chosen = parse_choice(llm_response, menu)
         assert chosen.key == "osmotret"
         result = execute_action(chosen, st)
-        assert "осмотр" in result.events
+        assert "You look around." in result.events
         assert st["hidden"]["step"] == 1
 
     def test_cycle_go_north(self):
@@ -84,7 +84,7 @@ class TestFullCycleExploration:
         menu = build_menu(st["visible"], st)
         keys = [a.key for a in menu]
         assert "go_north" in keys
-        llm_response = "Going north.\nункт 2\n"
+        llm_response = "Going north.\nCHOICE: 1\n"
         chosen = parse_choice(llm_response, menu)
         assert chosen.key == "go_north"
         result = execute_action(chosen, st, rng=lambda: 4)
@@ -167,12 +167,12 @@ class TestFullCycleCombat:
 class TestParseChoiceEdgeCases:
     def test_parse_numbered_zero(self):
         actions = [Action("a", "A"), Action("b", "B")]
-        result = parse_choice("Ы: 0", actions)
+        result = parse_choice("CHOICE: 0", actions)
         assert result.key == "a"
 
     def test_parse_numbered_one(self):
         actions = [Action("a", "A"), Action("b", "B")]
-        result = parse_choice("Ы: 1", actions)
+        result = parse_choice("CHOICE: 1", actions)
         assert result.key == "b"
 
     def test_parse_prefix_match(self):
@@ -186,12 +186,12 @@ class TestParseChoiceEdgeCases:
         assert result.key == "a"
 
     def test_parse_empty_menu_returns_osmotret(self):
-        result = parse_choice("Ы: 0", [])
+        result = parse_choice("CHOICE: 0", [])
         assert result.key == "osmotret"
 
     def test_parse_invalid_number_fallback(self):
         actions = [Action("a", "A")]
-        result = parse_choice("Ы: 99", actions)
+        result = parse_choice("CHOICE: 99", actions)
         assert result.key == "a"
 
 

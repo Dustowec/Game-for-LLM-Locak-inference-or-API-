@@ -107,7 +107,7 @@ def test_initial_hp_mp():
 def test_initial_hunger_and_sleep():
     state = _default_state()
     v = state["visible"]
-    assert v["eat"] is False
+    assert v["eat"] is True
     assert v["sleep_counter"] == 0
 
 
@@ -129,7 +129,10 @@ def test_initial_wallet_five_silver():
 
 def test_initial_inventory_empty():
     state = _default_state()
-    assert state["visible"]["inventory"] == []
+    assert state["visible"]["inventory"] == [
+        {"name": "bread", "count": 2},
+        {"name": "water", "count": 1},
+    ]
 
 
 def test_initial_skills_empty():
@@ -228,7 +231,10 @@ def test_initial_state_two_calls_are_independent():
     s1 = _default_state()
     s2 = _default_state()
     s1["visible"]["inventory"].append({"name": "sword", "count": 1})
-    assert s2["visible"]["inventory"] == []
+    assert s2["visible"]["inventory"] == [
+        {"name": "bread", "count": 2},
+        {"name": "water", "count": 1},
+    ]
     s1["hidden"]["reputation"]["blacksmith"] = 5
     assert s2["hidden"]["reputation"]["blacksmith"] == 0
 

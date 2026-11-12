@@ -170,13 +170,13 @@ class TestAttack:
         result = loop.execute_action(
             _attack_action("no_such_enemy"), state, lambda: 5,
         )
-        assert any("ошибка" in ev.lower() for ev in result.events)
+        assert any("error" in ev.lower() for ev in result.events)
 
     def test_attack_dead_target_returns_error(self):
         state, e = _state_with_one_enemy()
         state["hidden"]["combat"]["enemies"][0]["alive"] = False
         result = loop.execute_action(_attack_action(e.id), state, lambda: 5)
-        assert any("ошибка" in ev.lower() for ev in result.events)
+        assert any("error" in ev.lower() for ev in result.events)
 
 
 # ─── блок ──────────────────────────────────────────────────
@@ -229,7 +229,7 @@ class TestFlee:
         result = loop.execute_action(
             loop.Action(key="flee", label="Flee"), state, _rng_from([5]),
         )
-        assert any("ошибка" in ev.lower() for ev in result.events)
+        assert any("error" in ev.lower() for ev in result.events)
 
 
 # ─── смерть Бурта ──────────────────────────────────────────
@@ -316,14 +316,14 @@ class TestErrors:
         result = loop.execute_action(
             _attack_action("x"), state, lambda: 5,
         )
-        assert any("ошибка" in ev.lower() for ev in result.events)
+        assert any("error" in ev.lower() for ev in result.events)
 
     def test_unknown_action_in_combat_returns_error(self):
         state, _ = _state_with_one_enemy()
         result = loop.execute_action(
             loop.Action(key="teleport", label="TP"), state, lambda: 5,
         )
-        assert any("ошибка" in ev.lower() for ev in result.events)
+        assert any("error" in ev.lower() for ev in result.events)
 
 
 # ─── rng по умолчанию ──────────────────────────────────────
