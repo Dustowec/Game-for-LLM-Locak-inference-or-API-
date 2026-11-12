@@ -3,19 +3,19 @@
 Боевой сенсорный отчёт. Отдельная функция, format_sensory_report
 не трогает. По §23:
 
-    [БОЙ]
-    Противник: гоблин (или волк_1, волк_2)
-    Твой ход.
+    [COMBAT]
+    Enemy: goblin (или волк_1, волк_2)
+    Your turn.
 
 Правила:
 - HP врагов НЕ показываем, урон НЕ показываем.
-- Мёртвых помечаем "(Мёртв)".
+- Мёртвых помечаем "(Dead)".
 - Раунд НЕ выводим, инициативу НЕ выводим.
 - Меню собирается из реально доступных действий:
-  - атаковать <цель> — по строке на каждого живого врага;
-  - блокировать — если есть живые;
-  - бежать — если есть живые и среди них нет no_flee;
-  - кастовать — если burt.spells_available.
+  - attack <цель> — по строке на каждого живого врага;
+  - block — если есть живые;
+  - flee — если есть живые и среди них нет no_flee;
+  - cast — если burt.spells_available.
 
 Тесты используют ENEMIES из bestiary, чтобы не быть
 привязанными к конкретным именам/ключам.
@@ -87,17 +87,17 @@ class TestStructure:
     def test_starts_with_combat_header(self):
         k = _key_any()
         out = _report(_combat(_enemy(k)))
-        assert out.startswith("[БОЙ]")
+        assert out.startswith("[COMBAT]")
 
     def test_has_protivnik_line(self):
         k = _key_any()
         out = _report(_combat(_enemy(k)))
-        assert "Противник:" in out
+        assert "Enemy:" in out
 
     def test_has_tvoy_hod(self):
         k = _key_any()
         out = _report(_combat(_enemy(k)))
-        assert "Твой ход." in out
+        assert "Your turn." in out
 
     def test_no_trailing_newline(self):
         k = _key_any()
@@ -140,7 +140,7 @@ class TestOpponents:
     def test_dead_marked(self):
         k = _key_any()
         out = _report(_combat(_enemy(k, f"{k}_1", alive=False)))
-        assert "Мёртв" in out
+        assert "Dead" in out
 
     def test_dead_keeps_number_when_multiple(self):
         k = _key_any()
@@ -149,11 +149,11 @@ class TestOpponents:
             _enemy(k, f"{k}_2", alive=True),
         ))
         n = ENEMIES[k].name
-        assert f"{n}_1" in out and "Мёртв" in out
+        assert f"{n}_1" in out and "Dead" in out
         assert f"{n}_2" in out
 
     def test_numbering_stable_after_death(self):
-        # убили первого — второй остаётся волк_2, не превращается в волк
+        # убили первого — второй остаётся волк_2, не превращается в wolf
         k = _key_any()
         out = _report(_combat(
             _enemy(k, f"{k}_1", alive=False),
@@ -206,7 +206,7 @@ class TestMenu:
     def test_attack_single_uses_name(self):
         k = _key_any()
         out = _report(_combat(_enemy(k)))
-        assert f"атаковать {ENEMIES[k].name}" in out
+        assert f"attack {ENEMIES[k].name}" in out
 
     def test_attack_multiple_lists_each_alive(self):
         k = _key_any()
@@ -214,8 +214,8 @@ class TestMenu:
             _enemy(k, f"{k}_1"), _enemy(k, f"{k}_2"),
         ))
         n = ENEMIES[k].name
-        assert f"атаковать {n}_1" in out
-        assert f"атаковать {n}_2" in out
+        assert f"attack {n}_1" in out
+        assert f"attack {n}_2" in out
 
     def test_attack_skips_dead(self):
         k = _key_any()
@@ -224,33 +224,33 @@ class TestMenu:
             _enemy(k, f"{k}_2", alive=True),
         ))
         n = ENEMIES[k].name
-        assert f"атаковать {n}_2" in out
-        assert f"атаковать {n}_1" not in out
+        assert f"attack {n}_2" in out
+        assert f"attack {n}_1" not in out
 
     def test_block_present(self):
         k = _key_any()
         out = _report(_combat(_enemy(k)))
-        assert "блокировать" in out
+        assert "block" in out
 
     def test_flee_present_for_normal(self):
         k = _key_with_flee()
         out = _report(_combat(_enemy(k, f"{k}_1")))
-        assert "бежать" in out
+        assert "flee" in out
 
     def test_flee_absent_for_no_flee(self):
         k = _key_no_flee()
         out = _report(_combat(_enemy(k, f"{k}_1")))
-        assert "бежать" not in out
+        assert "flee" not in out
 
     def test_cast_absent_by_default(self):
         k = _key_any()
         out = _report(_combat(_enemy(k)), _burt(spells=False))
-        assert "кастовать" not in out
+        assert "cast" not in out
 
     def test_cast_present_when_available(self):
         k = _key_any()
         out = _report(_combat(_enemy(k)), _burt(spells=True))
-        assert "кастовать" in out
+        assert "cast" in out
 
     def test_menu_order_attacks_first(self):
         keys = [
@@ -259,9 +259,9 @@ class TestMenu:
         ][:2]
         k0, k1 = keys[0], keys[1]
         out = _report(_combat(_enemy(k0), _enemy(k1)))
-        idx_attack = out.index("атаковать")
-        idx_block = out.index("блокировать")
-        idx_flee = out.index("бежать")
+        idx_attack = out.index("attack")
+        idx_block = out.index("block")
+        idx_flee = out.index("flee")
         assert idx_attack < idx_block < idx_flee
 
     def test_cast_after_flee(self):
@@ -270,7 +270,7 @@ class TestMenu:
             _combat(_enemy(k, f"{k}_1")),
             _burt(spells=True),
         )
-        assert out.index("кастовать") > out.index("бежать")
+        assert out.index("cast") > out.index("flee")
 
 
 # ─── граничные случаи ──────────────────────────────────────
@@ -279,16 +279,16 @@ class TestEdgeCases:
     def test_all_dead_no_attack_lines(self):
         k = _key_any()
         out = _report(_combat(_enemy(k, f"{k}_1", alive=False)))
-        assert "атаковать" not in out
+        assert "attack" not in out
 
     def test_all_dead_no_block_no_flee(self):
         k = _key_any()
         out = _report(_combat(_enemy(k, f"{k}_1", alive=False)))
-        assert "блокировать" not in out
-        assert "бежать" not in out
+        assert "block" not in out
+        assert "flee" not in out
 
     def test_all_dead_still_has_header_and_tvoy_hod(self):
         k = _key_any()
         out = _report(_combat(_enemy(k, f"{k}_1", alive=False)))
-        assert out.startswith("[БОЙ]")
-        assert "Твой ход." in out
+        assert out.startswith("[COMBAT]")
+        assert "Your turn." in out

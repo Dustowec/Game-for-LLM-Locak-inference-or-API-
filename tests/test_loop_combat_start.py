@@ -32,7 +32,7 @@ def make_state():
     return {
         "visible": {
             "hp": 10, "hp_max": 10, "mp": 3, "mp_max": 3,
-            "eat": True, "sleep_counter": 5, "date": "1 день",
+            "eat": True, "sleep_counter": 5, "date": "1 day",
             "effects": [],
             "location": {
                 "name": "Crossroads",
@@ -96,8 +96,8 @@ class TestStartCombat:
             ["wolf"], "enemy", st["hidden"], st["visible"],
         )
         assert isinstance(report, str)
-        assert "[БОЙ]" in report
-        assert "волк" in report.lower()
+        assert "[COMBAT]" in report
+        assert "wolf" in report.lower()
 
     def test_initiative_enemy_preserved(self):
         st = make_state()
@@ -122,8 +122,8 @@ class TestStartCombat:
 
 class TestMovementRoll:
     # Start node has preset neighbours (all typed, entered=False):
-    #   north -> дорога, east -> кустарник, south -> лес, west -> река.
-    # We use north (дорога) here: safe -> no encounter on entry.
+    #   north -> road, east -> thicket, south -> forest, west -> river.
+    # We use north (road) here: safe -> no encounter on entry.
 
     def test_roll_1_stays_in_place(self):
         st = make_state()
@@ -179,9 +179,9 @@ class TestMovementRoll:
 # ─── TestOnEntryEncounter ──────────────────────────────────
 
 class TestOnEntryEncounter:
-    # South -> лес (dangerous). rng seq:
+    # South -> forest (dangerous). rng seq:
     #   [move, count, dirs, type, size, encounter_roll, ...]
-    # East -> кустарник (ambush). rng seq:
+    # East -> thicket (ambush). rng seq:
     #   [move, count, dirs, type, size, ambush_type, ambush_size]
 
     def test_forest_encounter_roll_1_starts_combat(self):
@@ -193,7 +193,7 @@ class TestOnEntryEncounter:
         assert st["hidden"]["current_mode"] == "combat"
         assert st["hidden"]["combat"] is not None
         assert st["hidden"]["combat"]["initiative"] == "enemy"
-        assert any("[БОЙ]" in ev for ev in result.events)
+        assert any("[COMBAT]" in ev for ev in result.events)
 
     def test_forest_encounter_roll_2_starts_combat(self):
         st = make_state()
@@ -222,13 +222,13 @@ class TestOnEntryEncounter:
         assert st["hidden"]["current_mode"] == "combat"
         assert st["hidden"]["combat"]["initiative"] == "enemy"
         assert len(st["hidden"]["combat"]["enemies"]) == 3
-        assert any("[БОЙ]" in ev for ev in result.events)
+        assert any("[COMBAT]" in ev for ev in result.events)
 
     def test_river_no_encounter(self):
         """River is safe: _maybe_start_combat_on_enter returns None."""
         st = make_state()
         result = _maybe_start_combat_on_enter(
-            "река", st["hidden"], st["visible"], lambda: 1,
+            "river", st["hidden"], st["visible"], lambda: 1,
         )
         assert result is None
         assert st["hidden"]["current_mode"] == "exploring"
@@ -237,7 +237,7 @@ class TestOnEntryEncounter:
     def test_village_no_encounter(self):
         st = make_state()
         result = _maybe_start_combat_on_enter(
-            "деревня", st["hidden"], st["visible"], lambda: 1,
+            "village", st["hidden"], st["visible"], lambda: 1,
         )
         assert result is None
         assert st["hidden"]["current_mode"] == "exploring"
@@ -250,10 +250,10 @@ class TestNewNodeGeneration:
         st = make_state()
         south_id = _start_node_exits(st)["south"]
         st["hidden"]["location_graph"][south_id]["type"] = None
-        # move=4, count=4, dirs=4, type=1 (лес), size=4, encounter=3.
+        # move=4, count=4, dirs=4, type=1 (forest), size=4, encounter=3.
         rng = _seq_rng([4, 4, 4, 1, 4, 3])
         execute_action(Action("go_south", "Go"), st, rng=rng)
-        assert st["hidden"]["location_graph"][south_id]["type"] == "лес"
+        assert st["hidden"]["location_graph"][south_id]["type"] == "forest"
 
     def test_new_node_gets_exits(self):
         st = make_state()
@@ -286,7 +286,7 @@ class TestNewNodeGeneration:
         # rng: count=4, dirs=4, type=5, size_roll=4 -> normalized to 1..3.
         rng = _seq_rng([4, 4, 5, 4])
         _enter_new_node(graph, south_id, rng)
-        assert graph[south_id]["type"] in ("болото", "река", "дорога")
+        assert graph[south_id]["type"] in ("swamp", "river", "road")
         assert graph[south_id]["entered"] is True
 
 
@@ -295,10 +295,10 @@ class TestNewNodeGeneration:
 class TestCombatReportInEvents:
     def test_events_contain_combat_report_on_start(self):
         st = make_state()
-        # South -> лес, encounter roll=1.
+        # South -> forest, encounter roll=1.
         rng = _seq_rng([4, 4, 4, 4, 4, 1, 4, 6])
         result = execute_action(Action("go_south", "Go"), st, rng=rng)
-        combat_events = [ev for ev in result.events if "[БОЙ]" in ev]
+        combat_events = [ev for ev in result.events if "[COMBAT]" in ev]
         assert len(combat_events) == 1
 
     def test_combat_mode_persists_after_attack(self):

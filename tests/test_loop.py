@@ -29,15 +29,15 @@ def make_state(mode="exploring"):
     return {
         "visible": {
             "hp": 10, "hp_max": 10, "mp": 3, "mp_max": 3,
-            "eat": True, "sleep_counter": 5, "date": "1 день",
+            "eat": True, "sleep_counter": 5, "date": "1 day",
             "effects": [],
             "location": {
                 "name": "Crossroads",
                 "exits": ["north", "east", "south", "west"],
             },
             "inventory": [
-                {"name": "хлеб", "count": 2},
-                {"name": "вода", "count": 1},
+                {"name": "bread", "count": 2},
+                {"name": "water", "count": 1},
             ],
             "wallet": {"gold": 0, "silver": 5, "copper": 0},
             "skills_visible": [],
@@ -106,17 +106,17 @@ class TestBuildMenuExploring:
 
     def test_eat_food_present_with_bread(self):
         st = make_state()
-        st["visible"]["inventory"] = [{"name": "хлеб", "count": 1}]
+        st["visible"]["inventory"] = [{"name": "bread", "count": 1}]
         assert "eat_food" in _keys(build_menu(st["visible"], st))
 
     def test_drink_water_present_with_water(self):
         st = make_state()
-        st["visible"]["inventory"] = [{"name": "вода", "count": 1}]
+        st["visible"]["inventory"] = [{"name": "water", "count": 1}]
         assert "drink_water" in _keys(build_menu(st["visible"], st))
 
     def test_no_eat_food_without_bread(self):
         st = make_state()
-        st["visible"]["inventory"] = [{"name": "меч", "count": 1}]
+        st["visible"]["inventory"] = [{"name": "sword", "count": 1}]
         keys = _keys(build_menu(st["visible"], st))
         assert "eat_food" not in keys
         assert "drink_water" not in keys
@@ -210,7 +210,7 @@ class TestExecuteActionExploring:
                                 rng=lambda: 4)
         assert st["hidden"]["current_node_id"] != "start"
         assert st["hidden"]["step"] == 1
-        # world preset: north from start is "дорога" -> "Road".
+        # world preset: north from start is "road" -> "Road".
         assert st["visible"]["location"]["name"] == "Road"
         assert isinstance(result, ActionResult)
 
@@ -291,10 +291,10 @@ class TestErrorResult:
 
 class TestResolveLocationName:
     def test_known_type_старт(self):
-        assert _resolve_location_name("старт", "start") == "Crossroads"
+        assert _resolve_location_name("crossroads", "start") == "Crossroads"
 
     def test_known_type_лес(self):
-        assert _resolve_location_name("лес", "forest_1") == "Forest"
+        assert _resolve_location_name("forest", "forest_1") == "Forest"
 
     def test_unknown_type_falls_back_to_node_id(self):
         assert _resolve_location_name("zxc", "node_42") == "node_42"

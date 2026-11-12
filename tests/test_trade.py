@@ -8,13 +8,13 @@
   покупка Буртом:  floor(base * mod)
   продажа Буртом:  floor(floor(base * 0.5) * mod)
 
-Все цены — в МЕДЯКАХ (1 сер. = 10 мед., 1 зол. = 100 мед.).
+Все цены — в МЕДЯКАХ (1 silver = 10 copper, 1 gold = 100 copper).
 Округление ВНИЗ на каждом шаге.
 
-Роли с торговлей (7):  староста, кузнец, торговец, рыбак,
-                       трактирщик, маг, чернокнижник
-Роли без торговли (6): крестьянин, крестьянка, ребёнок,
-                       стражник, ветеран, служитель_церкви
+Роли с торговлей (7):  elder, blacksmith, merchant, fisherman,
+                       tavernkeeper, mage, necromancer
+Роли без торговли (6): peasant, peasant_woman, child,
+                       guard, veteran, cleric
 Все роли с торговлей покупают ВСЁ.
 """
 import pytest
@@ -65,51 +65,51 @@ class TestBasePrices:
     """§35: цены покупки в медяках."""
 
     def test_bread(self):
-        assert trade.BASE_PRICES["хлеб"] == 2
+        assert trade.BASE_PRICES["bread"] == 2
 
     def test_fish(self):
-        assert trade.BASE_PRICES["рыба"] == 2
+        assert trade.BASE_PRICES["fish"] == 2
 
     def test_dried_fish(self):
-        assert trade.BASE_PRICES["вяленая рыба"] == 3
+        assert trade.BASE_PRICES["dried_fish"] == 3
 
     def test_water_flask_small(self):
-        # 2 мед.
-        assert trade.BASE_PRICES["фляга с водой"] == 2
+        # 2 copper
+        assert trade.BASE_PRICES["waterskin"] == 2
 
     def test_water_flask_big(self):
-        # 1 сер. = 10 мед.
-        assert trade.BASE_PRICES["фляга с водой большая"] == 10
+        # 1 silver = 10 copper
+        assert trade.BASE_PRICES["large_waterskin"] == 10
 
     def test_sleeping_bag(self):
-        assert trade.BASE_PRICES["спальный мешок"] == 5
+        assert trade.BASE_PRICES["bedroll"] == 5
 
     def test_tavern_room(self):
-        assert trade.BASE_PRICES["комната в таверне"] == 5
+        assert trade.BASE_PRICES["tavern_room"] == 5
 
     def test_club(self):
-        # 1 сер. = 10 мед.
-        assert trade.BASE_PRICES["дубина"] == 10
+        # 1 silver = 10 copper
+        assert trade.BASE_PRICES["club"] == 10
 
     def test_spear(self):
-        # 2 сер. = 20 мед.
-        assert trade.BASE_PRICES["копьё"] == 20
+        # 2 silver = 20 copper
+        assert trade.BASE_PRICES["spear"] == 20
 
     def test_sword_low(self):
-        # 1 сер. = 10 мед.
-        assert trade.BASE_PRICES["меч низкого качества"] == 10
+        # 1 silver = 10 copper
+        assert trade.BASE_PRICES["low_quality_sword"] == 10
 
     def test_sword_normal(self):
-        # 3 сер. = 30 мед.
-        assert trade.BASE_PRICES["меч обычный"] == 30
+        # 3 silver = 30 copper
+        assert trade.BASE_PRICES["ordinary_sword"] == 30
 
     def test_sword_high(self):
-        # 6 сер. = 60 мед.
-        assert trade.BASE_PRICES["меч высокого качества"] == 60
+        # 6 silver = 60 copper
+        assert trade.BASE_PRICES["high_quality_sword"] == 60
 
     def test_staff(self):
-        # 1 зол. = 100 мед.
-        assert trade.BASE_PRICES["посох"] == 100
+        # 1 gold = 100 copper
+        assert trade.BASE_PRICES["staff"] == 100
 
 
 # ============================================================
@@ -120,33 +120,33 @@ class TestLootPrices:
     """§35: цены лута в медяках (база для продажи)."""
 
     def test_goblin_dagger(self):
-        assert trade.LOOT_PRICES["кинжал гоблина"] == 3
+        assert trade.LOOT_PRICES["goblin_dagger"] == 3
 
     def test_goblin_staff(self):
-        assert trade.LOOT_PRICES["колдовской посох гоблина"] == 6
+        assert trade.LOOT_PRICES["goblin_staff"] == 6
 
     def test_bandage(self):
-        assert trade.LOOT_PRICES["повязка"] == 1
+        assert trade.LOOT_PRICES["bandage"] == 1
 
     def test_fangs(self):
-        # «клыки (2 шт.)» — 3 мед. за пару
-        assert trade.LOOT_PRICES["клыки"] == 3
+        # «fangs (2 pcs.)» — 3 copper за пару
+        assert trade.LOOT_PRICES["fangs"] == 3
 
     def test_pelt(self):
-        # 1 сер. = 10 мед.
-        assert trade.LOOT_PRICES["шкура"] == 10
+        # 1 silver = 10 copper
+        assert trade.LOOT_PRICES["pelt"] == 10
 
     def test_dragon_scale(self):
-        # 10 зол. = 1000 мед.
-        assert trade.LOOT_PRICES["чешуя дракона"] == 1000
+        # 10 gold = 1000 copper
+        assert trade.LOOT_PRICES["dragon_scale"] == 1000
 
     def test_dragon_fangs(self):
-        # 5 зол. = 500 мед.
-        assert trade.LOOT_PRICES["драконьи клыки"] == 500
+        # 5 gold = 500 copper
+        assert trade.LOOT_PRICES["dragon_fangs"] == 500
 
     def test_dragon_bone(self):
-        # 10 зол. = 1000 мед.
-        assert trade.LOOT_PRICES["кость дракона"] == 1000
+        # 10 gold = 1000 copper
+        assert trade.LOOT_PRICES["dragon_bone"] == 1000
 
 
 # ============================================================
@@ -157,43 +157,43 @@ class TestBuyPrice:
     """buy_price(base, mod) = floor(base * mod)."""
 
     def test_bread_base(self):
-        assert trade.buy_price("хлеб", 1.0) == 2
+        assert trade.buy_price("bread", 1.0) == 2
 
     def test_bread_plus_25(self):
         # 2 * 1.25 = 2.5 -> 2
-        assert trade.buy_price("хлеб", 1.25) == 2
+        assert trade.buy_price("bread", 1.25) == 2
 
     def test_bread_minus_25(self):
         # 2 * 0.75 = 1.5 -> 1
-        assert trade.buy_price("хлеб", 0.75) == 1
+        assert trade.buy_price("bread", 0.75) == 1
 
     def test_sword_normal_base(self):
-        assert trade.buy_price("меч обычный", 1.0) == 30
+        assert trade.buy_price("ordinary_sword", 1.0) == 30
 
     def test_sword_normal_plus_25(self):
         # 30 * 1.25 = 37.5 -> 37
-        assert trade.buy_price("меч обычный", 1.25) == 37
+        assert trade.buy_price("ordinary_sword", 1.25) == 37
 
     def test_sword_normal_minus_25(self):
         # 30 * 0.75 = 22.5 -> 22
-        assert trade.buy_price("меч обычный", 0.75) == 22
+        assert trade.buy_price("ordinary_sword", 0.75) == 22
 
     def test_staff_plus_25(self):
         # 100 * 1.25 = 125
-        assert trade.buy_price("посох", 1.25) == 125
+        assert trade.buy_price("staff", 1.25) == 125
 
     def test_rounds_down_always(self):
         # 3 * 1.25 = 3.75 -> 3, не 4
-        assert trade.buy_price("вяленая рыба", 1.25) == 3
+        assert trade.buy_price("dried_fish", 1.25) == 3
 
     def test_unknown_item_raises(self):
         with pytest.raises(KeyError):
             trade.buy_price("нет такого предмета", 1.0)
 
     def test_loot_not_buyable(self):
-        # кинжал гоблина — лут, Бурт его НЕ покупает
+        # goblin_dagger — лут, Бурт его НЕ покупает
         with pytest.raises(KeyError):
-            trade.buy_price("кинжал гоблина", 1.0)
+            trade.buy_price("goblin_dagger", 1.0)
 
 
 # ============================================================
@@ -205,61 +205,61 @@ class TestSellPrice:
 
     def test_bread_sell_base(self):
         # floor(floor(2 * 0.5) * 1.0) = floor(1 * 1) = 1
-        assert trade.sell_price("хлеб", 1.0) == 1
+        assert trade.sell_price("bread", 1.0) == 1
 
     def test_sword_normal_sell_base(self):
         # floor(floor(30 * 0.5) * 1.0) = floor(15 * 1) = 15
-        assert trade.sell_price("меч обычный", 1.0) == 15
+        assert trade.sell_price("ordinary_sword", 1.0) == 15
 
     def test_sword_normal_sell_plus(self):
         # floor(15 * 1.25) = floor(18.75) = 18
-        assert trade.sell_price("меч обычный", 1.25) == 18
+        assert trade.sell_price("ordinary_sword", 1.25) == 18
 
     def test_sword_normal_sell_minus(self):
         # floor(15 * 0.75) = floor(11.25) = 11
-        assert trade.sell_price("меч обычный", 0.75) == 11
+        assert trade.sell_price("ordinary_sword", 0.75) == 11
 
     def test_goblin_dagger_sell_base(self):
         # floor(floor(3 * 0.5) * 1.0) = floor(1 * 1) = 1
-        assert trade.sell_price("кинжал гоблина", 1.0) == 1
+        assert trade.sell_price("goblin_dagger", 1.0) == 1
 
     def test_goblin_dagger_sell_plus(self):
         # floor(1 * 1.25) = 1
-        assert trade.sell_price("кинжал гоблина", 1.25) == 1
+        assert trade.sell_price("goblin_dagger", 1.25) == 1
 
     def test_goblin_dagger_sell_minus(self):
         # floor(1 * 0.75) = 0
-        assert trade.sell_price("кинжал гоблина", 0.75) == 0
+        assert trade.sell_price("goblin_dagger", 0.75) == 0
 
     def test_bandage_always_zero(self):
         # floor(floor(1 * 0.5) * mod) = 0 всегда
-        # повязка за 1 мед. в продаже уходит за 0
-        assert trade.sell_price("повязка", 1.0) == 0
-        assert trade.sell_price("повязка", 1.25) == 0
-        assert trade.sell_price("повязка", 0.75) == 0
+        # bandage за 1 copper в продаже уходит за 0
+        assert trade.sell_price("bandage", 1.0) == 0
+        assert trade.sell_price("bandage", 1.25) == 0
+        assert trade.sell_price("bandage", 0.75) == 0
 
     def test_dragon_scale_sell_base(self):
         # floor(floor(1000 * 0.5) * 1.0) = 500
-        assert trade.sell_price("чешуя дракона", 1.0) == 500
+        assert trade.sell_price("dragon_scale", 1.0) == 500
 
     def test_dragon_scale_sell_plus(self):
         # floor(500 * 1.25) = 625
-        assert trade.sell_price("чешуя дракона", 1.25) == 625
+        assert trade.sell_price("dragon_scale", 1.25) == 625
 
     def test_pelt_sell_base(self):
         # floor(floor(10 * 0.5) * 1.0) = 5
-        assert trade.sell_price("шкура", 1.0) == 5
+        assert trade.sell_price("pelt", 1.0) == 5
 
     def test_unknown_item_raises(self):
         with pytest.raises(KeyError):
             trade.sell_price("нет такого предмета", 1.0)
 
     def test_loot_sellable(self):
-        assert trade.sell_price("колдовской посох гоблина", 1.0) == 3
+        assert trade.sell_price("goblin_staff", 1.0) == 3
 
     def test_regular_item_sellable(self):
-        # Бурт может продать обратно хлеб
-        assert trade.sell_price("хлеб", 1.0) == 1
+        # Бурт может продать обратно bread
+        assert trade.sell_price("bread", 1.0) == 1
 
 
 # ============================================================
@@ -273,15 +273,15 @@ class TestTradeRoles:
         assert len(trade.TRADE_ROLES) == 7
 
     @pytest.mark.parametrize("role", [
-        "староста", "кузнец", "торговец", "рыбак",
-        "трактирщик", "маг", "чернокнижник",
+        "elder", "blacksmith", "merchant", "fisherman",
+        "tavernkeeper", "mage", "necromancer",
     ])
     def test_role_has_trade(self, role):
         assert role in trade.TRADE_ROLES
 
     @pytest.mark.parametrize("role", [
-        "крестьянин", "крестьянка", "ребёнок",
-        "стражник", "ветеран", "служитель_церкви",
+        "peasant", "peasant_woman", "child",
+        "guard", "veteran", "cleric",
     ])
     def test_role_no_trade(self, role):
         assert role not in trade.TRADE_ROLES
@@ -295,41 +295,41 @@ class TestRoleSells:
     """§35: что каждая роль с торговлей продаёт Бурту."""
 
     def test_elder_sells(self):
-        items = trade.ROLE_SELLS["староста"]
-        assert "спальный мешок" in items
-        assert "фляга с водой" in items
+        items = trade.ROLE_SELLS["elder"]
+        assert "bedroll" in items
+        assert "waterskin" in items
 
     def test_blacksmith_sells(self):
-        items = trade.ROLE_SELLS["кузнец"]
-        assert "дубина" in items
-        assert "копьё" in items
-        assert "меч низкого качества" in items
-        assert "меч обычный" in items
-        assert "меч высокого качества" in items
+        items = trade.ROLE_SELLS["blacksmith"]
+        assert "club" in items
+        assert "spear" in items
+        assert "low_quality_sword" in items
+        assert "ordinary_sword" in items
+        assert "high_quality_sword" in items
 
     def test_trader_sells_everything(self):
-        items = trade.ROLE_SELLS["торговец"]
+        items = trade.ROLE_SELLS["merchant"]
         for name in trade.BASE_PRICES:
             assert name in items
 
     def test_fisher_sells(self):
-        items = trade.ROLE_SELLS["рыбак"]
-        assert "рыба" in items
-        assert "вяленая рыба" in items
+        items = trade.ROLE_SELLS["fisherman"]
+        assert "fish" in items
+        assert "dried_fish" in items
 
     def test_tavernkeeper_sells(self):
-        items = trade.ROLE_SELLS["трактирщик"]
-        assert "хлеб" in items
-        assert "фляга с водой" in items
-        assert "комната в таверне" in items
+        items = trade.ROLE_SELLS["tavernkeeper"]
+        assert "bread" in items
+        assert "waterskin" in items
+        assert "tavern_room" in items
 
     def test_mage_sells_only_staff(self):
-        items = trade.ROLE_SELLS["маг"]
-        assert items == frozenset({"посох"})
+        items = trade.ROLE_SELLS["mage"]
+        assert items == frozenset({"staff"})
 
     def test_warlock_sells_only_staff(self):
-        items = trade.ROLE_SELLS["чернокнижник"]
-        assert items == frozenset({"посох"})
+        items = trade.ROLE_SELLS["necromancer"]
+        assert items == frozenset({"staff"})
 
     def test_every_trade_role_in_role_sells(self):
         for role in trade.TRADE_ROLES:

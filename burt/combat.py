@@ -39,7 +39,7 @@ class EnemyInstance:
     mp_max: int = 0
     alive: bool = True
 
-    # Дракон.
+    # Dragon.
     turns_taken: int = 0
     breaths_used: int = 0
 
@@ -205,11 +205,11 @@ def _burt_attack(
         target.hp -= result.damage
         if target.hp <= 0:
             _kill(target)
-            events_llm.append(f"Ты убил {name}.")
+            events_llm.append(f"You killed {name}.")
         else:
-            events_llm.append(f"Ты ударил {name}.")
+            events_llm.append(f"You hit {name}.")
     else:
-        events_llm.append(f"Ты промахнулся по {name}.")
+        events_llm.append(f"You missed {name}.")
 
     return replace(burt, hp=burt.hp - result.self_penalty_hp)
 
@@ -218,7 +218,7 @@ def _burt_block(
     events_llm: list[str],
     events_tech: list[str],
 ) -> None:
-    events_llm.append("Ты встал в защиту.")
+    events_llm.append("You take a defensive stance.")
     events_tech.append("burt action: block")
 
 
@@ -229,7 +229,7 @@ def _burt_flee(
     events_llm: list[str],
     events_tech: list[str],
 ) -> tuple[BurtStats, str]:
-    # Из боя с драконом бежать нельзя.
+    # Из боя с драконом flee нельзя.
     if any(_template(e).tags and "no_flee" in _template(e).tags
            for e in _alive(combat)):
         raise ValueError("cannot flee from dragon")
@@ -255,7 +255,7 @@ def _burt_flee(
                 f"→ {res.incoming_damage}"
             )
         events_tech.append(f"flee roll={roll} escaped=True")
-        events_llm.append("Ты убежал.")
+        events_llm.append("You fled.")
         return replace(burt, hp=burt.hp - total_incoming), "burt_fled"
 
     res = dice.resolve_flee(
@@ -276,10 +276,10 @@ def _burt_flee(
             target.hp -= res.counter_damage
             if target.hp <= 0:
                 _kill(target)
-        events_llm.append("Ты убежал.")
+        events_llm.append("You fled.")
         return replace(burt, hp=burt.hp - res.incoming_damage), "burt_fled"
 
-    events_llm.append("Не удалось убежать.")
+    events_llm.append("Failed to flee.")
     return replace(burt, hp=burt.hp - res.incoming_damage), "ongoing"
 
 
@@ -315,9 +315,9 @@ def _try_cast(
         f"dmg={attack.damage} mp={enemy.mp}"
     )
     if not attack.hit:
-        events_llm.append(f"{template.name} промахнулся заклинанием.")
+        events_llm.append(f"{template.name} missed with a spell.")
         return burt, True
-    events_llm.append(f"{template.name} швыряет огонь.")
+    events_llm.append(f"{template.name} hurls fire.")
     return replace(burt, hp=burt.hp - attack.damage), True
 
 
@@ -341,9 +341,9 @@ def _try_melee(
         f"hit={attack.hit} dmg={attack.damage}"
     )
     if not attack.hit:
-        events_llm.append(f"{template.name} промахнулся.")
+        events_llm.append(f"{template.name} missed.")
         return burt
-    events_llm.append(f"{template.name} наносит тебе удар.")
+    events_llm.append(f"{template.name} hits you.")
     return replace(burt, hp=burt.hp - attack.damage)
 
 
@@ -369,7 +369,7 @@ def _enemy_spell(
     spell_min = template.spell_damage_min
     spell_max = template.spell_damage_max
 
-    # Всегда тратим ману (враг пытается кастовать)
+    # Всегда тратим ману (враг пытается cast)
     enemy.mp -= template.spell_cost
 
     # Всегда бросаем кубик атаки
@@ -396,7 +396,7 @@ def _enemy_spell(
             enemy.hp -= block.counter_damage
             if enemy.hp <= 0:
                 _kill(enemy)
-        events_llm.append(f"{template.name} швыряет огонь, ты защищаешься.")
+        events_llm.append(f"{template.name} hurls fire, you block.")
         return replace(
             burt,
             hp=burt.hp - outgoing_damage - block.self_penalty_hp,
@@ -408,9 +408,9 @@ def _enemy_spell(
         f"dmg={attack.damage} mp={enemy.mp}"
     )
     if not attack.hit:
-        events_llm.append(f"{template.name} промахнулся огнём.")
+        events_llm.append(f"{template.name} missed with fire.")
         return burt
-    events_llm.append(f"{template.name} швыряет огонь.")
+    events_llm.append(f"{template.name} hurls fire.")
     return replace(burt, hp=burt.hp - attack.damage)
 
 
@@ -441,7 +441,7 @@ def _enemy_melee(
             enemy.hp -= block.counter_damage
             if enemy.hp <= 0:
                 _kill(enemy)
-        events_llm.append(f"{template.name} бьёт, ты защищаешься.")
+        events_llm.append(f"{template.name} strikes, you block.")
         return replace(
             burt,
             hp=burt.hp - block.incoming_damage - block.self_penalty_hp,
@@ -458,9 +458,9 @@ def _enemy_melee(
         f"hit={attack.hit} dmg={attack.damage}"
     )
     if not attack.hit:
-        events_llm.append(f"{template.name} промахнулся.")
+        events_llm.append(f"{template.name} missed.")
         return burt
-    events_llm.append(f"{template.name} наносит тебе удар.")
+    events_llm.append(f"{template.name} hits you.")
     return replace(burt, hp=burt.hp - attack.damage)
 
 
@@ -489,7 +489,7 @@ def _enemy_melee(
             enemy.hp -= block.counter_damage
             if enemy.hp <= 0:
                 _kill(enemy)
-        events_llm.append(f"{template.name} бьёт, ты защищаешься.")
+        events_llm.append(f"{template.name} strikes, you block.")
         return replace(
             burt,
             hp=burt.hp - block.incoming_damage - block.self_penalty_hp,
@@ -506,9 +506,9 @@ def _enemy_melee(
         f"hit={attack.hit} dmg={attack.damage}"
     )
     if not attack.hit:
-        events_llm.append(f"{template.name} промахнулся.")
+        events_llm.append(f"{template.name} missed.")
         return burt
-    events_llm.append(f"{template.name} наносит тебе удар.")
+    events_llm.append(f"{template.name} hits you.")
     return replace(burt, hp=burt.hp - attack.damage)
 
 
@@ -528,7 +528,7 @@ def _enemy_turn(
             enemy, template, burt, rng, block_roll, events_llm, events_tech,
         )
 
-    # Дракон: дыхание на turns_taken 0, 3, 6 (пока breaths_used < max).
+    # Dragon: дыхание на turns_taken 0, 3, 6 (пока breaths_used < max).
     use_breath = (
         template.breath_max > 0
         and enemy.turns_taken % 3 == 0
@@ -547,9 +547,9 @@ def _enemy_turn(
             f"dmg={attack.damage}"
         )
         if not attack.hit:
-            events_llm.append("Дракон промахнулся дыханием.")
+            events_llm.append("Dragon missed with breath.")
             return burt
-        events_llm.append("Дракон дышит огнём.")
+        events_llm.append("Dragon breathes fire.")
         return replace(burt, hp=burt.hp - attack.damage)
 
     return _enemy_melee(
@@ -574,7 +574,7 @@ def resolve_round(
 
     # Free strike.
     if combat.initiative == "enemy" and not combat.free_strike_done:
-        events_llm.append("Засада!")
+        events_llm.append("Ambush!")
         for enemy in _alive(combat):
             if burt.hp <= 0:
                 break

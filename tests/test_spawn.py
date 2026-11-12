@@ -6,31 +6,31 @@
 
 Расклады кубика (1 — хуже всего, 6 — лучше всего):
 
-  Лес:
-    1-2 → гоблин-шаман (один)
-    3   → гоблин (стая 1-3)
-    4-5 → волк (стая 1-3)
-    6   → кабан (один)
+  Forest:
+    1-2 → goblin_shaman (один)
+    3   → goblin (стая 1-3)
+    4-5 → wolf (стая 1-3)
+    6   → boar (один)
 
-  Подземелье:
-    1   → дракон
-    2-3 → гоблин-шаман (один)
-    4-6 → гоблин (стая 1-3)
+  Dungeon:
+    1   → dragon
+    2-3 → goblin_shaman (один)
+    4-6 → goblin (стая 1-3)
 
-  Поле: кабан (один).
-  Степь: волк (стая).
-  Болото: гоблин (стая).
-  Река, дорога, деревня, храм: пусто.
+  Field: boar (один).
+  Steppe: wolf (стая).
+  Swamp: goblin (стая).
+  River, road, village, temple: empty.
 
-  Размер стаи (гоблин и волк):
+  Размер стаи (goblin и wolf):
     1-2 → 3
     3-4 → 2
     5-6 → 1
 
 ПРЕДПОЛОЖЕНИЕ (требует подтверждения):
   Засада — кубик на тип врага:
-    1-3 → волк
-    4-6 → гоблин
+    1-3 → wolf
+    4-6 → goblin
   Размер — по общему правилу для типа.
 """
 
@@ -83,7 +83,7 @@ class TestPossibleEnemies:
         assert possible_enemies(location) == frozenset()
 
 
-# ─── roll_enemy_type — лес ─────────────────────────────────
+# ─── roll_enemy_type — forest ─────────────────────────────────
 
 class TestRollEnemyTypeForest:
     @pytest.mark.parametrize("roll", [1, 2])
@@ -101,7 +101,7 @@ class TestRollEnemyTypeForest:
         assert roll_enemy_type("forest", 6) == "boar"
 
 
-# ─── roll_enemy_type — подземелье ──────────────────────────
+# ─── roll_enemy_type — dungeon ──────────────────────────
 
 class TestRollEnemyTypeDungeon:
     def test_dragon_on_1(self):
@@ -146,7 +146,7 @@ class TestRollEnemyTypeEmpty:
 # ─── roll_pack_size ────────────────────────────────────────
 
 class TestRollPackSize:
-    # Гоблин и волк — по общему правилу.
+    # Goblin и wolf — по общему правилу.
 
     @pytest.mark.parametrize("enemy", ["goblin", "wolf"])
     @pytest.mark.parametrize("roll", [1, 2])
@@ -190,14 +190,14 @@ class TestIsPack:
 # ─── spawn_random ──────────────────────────────────────────
 
 class TestSpawnRandom:
-    # Лес.
+    # Forest.
 
     def test_forest_shaman(self):
         # roll_type=1 → шаман, размер игнорируется.
         assert spawn_random("forest", 1, 5) == ["goblin_shaman"]
 
     def test_forest_goblin_pack_of_three(self):
-        # roll_type=3 → гоблин, roll_size=1 → 3.
+        # roll_type=3 → goblin, roll_size=1 → 3.
         assert spawn_random("forest", 3, 1) == ["goblin", "goblin", "goblin"]
 
     def test_forest_goblin_single(self):
@@ -209,7 +209,7 @@ class TestSpawnRandom:
     def test_forest_boar_single(self):
         assert spawn_random("forest", 6, 1) == ["boar"]
 
-    # Подземелье.
+    # Dungeon.
 
     def test_dungeon_dragon(self):
         assert spawn_random("dungeon", 1, 1) == ["dragon"]
@@ -247,8 +247,8 @@ class TestSpawnAmbush:
     Засада: только гоблины или только волки.
 
     ПРЕДПОЛОЖЕНИЕ (требует подтверждения):
-      1-3 → волк
-      4-6 → гоблин
+      1-3 → wolf
+      4-6 → goblin
     """
 
     @pytest.mark.parametrize("roll", [1, 2, 3])

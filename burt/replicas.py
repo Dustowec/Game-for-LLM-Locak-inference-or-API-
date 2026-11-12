@@ -85,7 +85,7 @@ def validate_replicas(data: Any) -> list[str]:
     """
     if not isinstance(data, dict):
         raise ValueError(
-            f"validate_replicas: ожидался dict, получено "
+            f"validate_replicas: ожидался dict, Took "
             f"{type(data).__name__}"
         )
 
@@ -171,7 +171,7 @@ def get_line(
     if kind not in _VALID_KINDS:
         raise ValueError(
             f"get_line: kind должен быть 'roles' или 'events', "
-            f"получено {kind!r}"
+            f"Took {kind!r}"
         )
 
     singular = "роли" if kind == "roles" else "события"

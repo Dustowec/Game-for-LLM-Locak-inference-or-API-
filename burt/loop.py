@@ -7,7 +7,7 @@ Combat delegates to burt.combat.resolve_round (§23):
 - BurtStats is assembled from visible + hidden["spells"];
 - after each round, hidden["combat"] is written back (or None on end);
 - hp/mp synced visible <-> hidden;
-- [БОЙ] report appended to events while combat is ongoing.
+- [COMBAT] report appended to events while combat is ongoing.
 
 All docstrings/comments in English. No Cyrillic literals.
 """
@@ -53,17 +53,17 @@ class ActionResult:
 
 # Location name mapping
 _LOCATION_NAMES = {
-    'старт': 'Crossroads',
-    'кустарник': 'Thicket',
-    'лес': 'Forest',
-    'поле': 'Field',
-    'степь': 'Steppe',
-    'болото': 'Swamp',
-    'река': 'River',
-    'дорога': 'Road',
-    'деревня': 'Village',
-    'храм': 'Temple',
-    'подземелье': 'Dungeon',
+    'crossroads': 'Crossroads',
+    'thicket': 'Thicket',
+    'forest': 'Forest',
+    'field': 'Field',
+    'steppe': 'Steppe',
+    'swamp': 'Swamp',
+    'river': 'River',
+    'road': 'Road',
+    'village': 'Village',
+    'temple': 'Temple',
+    'dungeon': 'Dungeon',
 }
 
 DIRECTIONS = ("north", "east", "south", "west")
@@ -74,13 +74,13 @@ CRITICAL_HP_RATIO = 0.25
 # §23: locations where entering can trigger an ambush/encounter.
 # Mapping: Russian location type -> spawn table key.
 _ENCOUNTER_LOCATIONS = {
-    "лес": "forest",
-    "подземелье": "dungeon",
-    "поле": "field",
-    "степь": "steppe",
-    "болото": "swamp",
+    "forest": "forest",
+    "dungeon": "dungeon",
+    "field": "field",
+    "steppe": "steppe",
+    "swamp": "swamp",
 }
-_AMBUSH_LOCATION = "кустарник"  # §32: ambush at thicket
+_AMBUSH_LOCATION = "thicket"  # §32: ambush at thicket
 
 
 def build_menu(visible: dict, state: dict) -> list[Action]:
@@ -231,7 +231,7 @@ def execute_action(action: Action, state: dict, rng=None) -> ActionResult:
         visible["date"] = f"{hidden['day']} day(s)"
         return ActionResult(
             events=[
-                f"Возврат на {source}.",
+                f"Return to {source}.",
                 sensory.format_sensory_report(visible),
             ],
         )
@@ -607,14 +607,14 @@ def _handle_movement_failure(
     # Build event description.
     if damage > 0:
         event_msg = (
-            f"Не удалось пройти {direction}. "
-            f"Микро-событие: {micro_event.event_type}. "
-            f"Получено {damage} урона."
+            f"Failed to move {direction}. "
+            f"Micro-event: {micro_event.event_type}. "
+            f"Took {damage} damage."
         )
     else:
         event_msg = (
-            f"Не удалось пройти {direction}. "
-            f"Микро-событие: {micro_event.event_type}."
+            f"Failed to move {direction}. "
+            f"Micro-event: {micro_event.event_type}."
         )
 
     # Store micro-location state.

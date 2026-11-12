@@ -62,7 +62,7 @@ class TestHunger:
             assert death > hungry
 
     def test_death_within_day(self):
-        # Смерть укладывается в день
+        # Смерть укладывается в day
         for death in config.HUNGER_DEATH_AT:
             assert death < config.DAY_STEPS
 
@@ -79,41 +79,41 @@ class TestLocations:
         assert isinstance(config.LOCATION_TYPES, frozenset)
 
     def test_location_types_has_11_entries(self):
-        # старт, кустарник, лес, поле, степь, болото, река, дорога,
-        # деревня, храм, подземелье
+        # crossroads, thicket, forest, field, steppe, swamp, river, road,
+        # village, temple, dungeon
         assert len(config.LOCATION_TYPES) == 11
 
     def test_location_types_full_set(self):
         assert config.LOCATION_TYPES == {
-            "старт", "кустарник",
-            "лес", "поле", "степь", "болото", "река", "дорога",
-            "деревня", "храм", "подземелье",
+            "crossroads", "thicket",
+            "forest", "field", "steppe", "swamp", "river", "road",
+            "village", "temple", "dungeon",
         }
 
     def test_rolls_table_covers_1_to_6(self):
         assert set(config.LOCATION_TYPE_ROLLS.keys()) == {1, 2, 3, 4, 5, 6}
 
     def test_roll_1_and_2_forest(self):
-        assert config.LOCATION_TYPE_ROLLS[1] == "лес"
-        assert config.LOCATION_TYPE_ROLLS[2] == "лес"
+        assert config.LOCATION_TYPE_ROLLS[1] == "forest"
+        assert config.LOCATION_TYPE_ROLLS[2] == "forest"
 
     def test_roll_3_field(self):
-        assert config.LOCATION_TYPE_ROLLS[3] == "поле"
+        assert config.LOCATION_TYPE_ROLLS[3] == "field"
 
     def test_roll_4_steppe(self):
-        assert config.LOCATION_TYPE_ROLLS[4] == "степь"
+        assert config.LOCATION_TYPE_ROLLS[4] == "steppe"
 
     def test_roll_5_tuple(self):
         # roll=5 → уточняющий 1d3
         assert config.LOCATION_TYPE_ROLLS[5] == (
-            "болото", "река", "дорога",
+            "swamp", "river", "road",
         )
 
     def test_roll_6_tuple(self):
         # roll=6 → уточняющий 1d6
         assert config.LOCATION_TYPE_ROLLS[6] == (
-            "храм", "подземелье",
-            "деревня", "деревня", "деревня", "деревня",
+            "temple", "dungeon",
+            "village", "village", "village", "village",
         )
 
     def test_rolls_values_are_known_types(self):
@@ -124,11 +124,11 @@ class TestLocations:
                 assert v in config.LOCATION_TYPES
 
     def test_start_and_bush_never_roll(self):
-        # "старт" и "кустарник" не выпадают в roll_location_type
+        # "crossroads" и "thicket" не выпадают в roll_location_type
         for entry in config.LOCATION_TYPE_ROLLS.values():
             values = (entry,) if isinstance(entry, str) else entry
-            assert "старт" not in values
-            assert "кустарник" not in values
+            assert "crossroads" not in values
+            assert "thicket" not in values
 
 
 # ---------------------------------------------------------------------

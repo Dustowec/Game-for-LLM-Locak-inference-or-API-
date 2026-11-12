@@ -97,17 +97,17 @@ class TestCallLlm:
     @pytest.mark.asyncio
     async def test_happy_path(self):
         system = "Ты Бурт."
-        user = "Меню: 0. идти на север\n"
+        user = "Меню: 0. идти на north\n"
         
         with patch.object(llm_client, "create_chat_completion") as mock_create:
-            mock_create.return_value = {"choices": [{"message": {"content": "Я иду на север."}}]}
+            mock_create.return_value = {"choices": [{"message": {"content": "Я иду на north."}}]}
             
             result, history = await llm_client.call_llm(system, user, [])
             
-            assert result == "Я иду на север."
+            assert result == "Я иду на north."
             assert len(history) == 1
             assert history[0]["role"] == "assistant"
-            assert history[0]["content"] == "Я иду на север."
+            assert history[0]["content"] == "Я иду на north."
 
     @pytest.mark.asyncio
     async def test_history_accumulation(self):

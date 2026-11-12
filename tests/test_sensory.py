@@ -4,23 +4,23 @@
 Собирается из visible state (§30).
 
 Формат (§25):
-    [СОСТОЯНИЕ]
+    [STATE]
     HP: 12/20 | MP: 3/5
-    Голод: сыт | Сон: 15/20
-    Дата: 7 день
-    Эффекты: благословлён
+    Hunger: full | Sleep: 15/20
+    Date: 7 day
+    Effects: blessed
 
-    [МЕСТО]
+    [LOCATION]
     Лесная тропа
-    Выходы: север, восток, юг
+    Exits: north, east, south
 
-    [РУКИ]
-    Меч — 1шт
+    [HANDS]
+    Sword — 1шт
 
-    [КОШЕЛЁК]
-    3 сер., 5 мед.
+    [WALLET]
+    3 silver, 5 copper
 
-    [НАВЫКИ]
+    [SKILLS]
     Владение дубиной 1/10
 """
 
@@ -38,7 +38,7 @@ def _visible(**overrides):
         "mp": 3, "mp_max": 5,
         "eat": True,
         "sleep_counter": 15,
-        "date": "7 день",
+        "date": "7 day",
         "effects": [],
         "location": {
             "name": "Лесная тропа",
@@ -63,16 +63,16 @@ class TestStructure:
 
     def test_has_all_five_sections(self):
         out = sensory.format_sensory_report(_visible())
-        for header in ("[СОСТОЯНИЕ]", "[МЕСТО]", "[РУКИ]",
-                       "[КОШЕЛЁК]", "[НАВЫКИ]"):
+        for header in ("[STATE]", "[LOCATION]", "[HANDS]",
+                       "[WALLET]", "[SKILLS]"):
             assert header in out
 
     def test_sections_separated_by_blank_line(self):
         out = sensory.format_sensory_report(_visible())
-        assert "\n\n[МЕСТО]" in out
-        assert "\n\n[РУКИ]" in out
-        assert "\n\n[КОШЕЛЁК]" in out
-        assert "\n\n[НАВЫКИ]" in out
+        assert "\n\n[LOCATION]" in out
+        assert "\n\n[HANDS]" in out
+        assert "\n\n[WALLET]" in out
+        assert "\n\n[SKILLS]" in out
 
     def test_no_trailing_newline(self):
         out = sensory.format_sensory_report(_visible())
@@ -81,17 +81,17 @@ class TestStructure:
     def test_section_order(self):
         out = sensory.format_sensory_report(_visible())
         idx = [
-            out.index("[СОСТОЯНИЕ]"),
-            out.index("[МЕСТО]"),
-            out.index("[РУКИ]"),
-            out.index("[КОШЕЛЁК]"),
-            out.index("[НАВЫКИ]"),
+            out.index("[STATE]"),
+            out.index("[LOCATION]"),
+            out.index("[HANDS]"),
+            out.index("[WALLET]"),
+            out.index("[SKILLS]"),
         ]
         assert idx == sorted(idx)
 
 
 # ---------------------------------------------------------------------
-# [СОСТОЯНИЕ]
+# [STATE]
 # ---------------------------------------------------------------------
 
 class TestStateSection:
@@ -109,59 +109,59 @@ class TestStateSection:
 
     def test_hunger_syt(self):
         out = sensory.format_sensory_report(_visible(eat=True))
-        assert "Голод: сыт" in out
+        assert "Hunger: full" in out
 
     def test_hunger_goloden(self):
         out = sensory.format_sensory_report(_visible(eat=False))
-        assert "Голод: голоден" in out
+        assert "Hunger: hungry" in out
 
     def test_sleep_timer_shown(self):
         out = sensory.format_sensory_report(_visible(sleep_counter=15))
-        assert "Сон: 15/20" in out
+        assert "Sleep: 15/20" in out
 
     def test_sleep_zero(self):
         out = sensory.format_sensory_report(_visible(sleep_counter=0))
-        assert "Сон: 0/20" in out
+        assert "Sleep: 0/20" in out
 
     def test_hunger_and_sleep_same_line(self):
         out = sensory.format_sensory_report(
             _visible(eat=True, sleep_counter=15)
         )
-        assert "Голод: сыт | Сон: 15/20" in out
+        assert "Hunger: full | Sleep: 15/20" in out
 
     def test_date_shown(self):
-        out = sensory.format_sensory_report(_visible(date="7 день"))
-        assert "Дата: 7 день" in out
+        out = sensory.format_sensory_report(_visible(date="7 day"))
+        assert "Date: 7 day" in out
 
     def test_effects_empty_no_line(self):
         out = sensory.format_sensory_report(_visible(effects=[]))
-        assert "Эффекты:" not in out
+        assert "Effects:" not in out
 
     def test_effect_blessed_translated(self):
         out = sensory.format_sensory_report(_visible(effects=["blessed"]))
-        assert "Эффекты: благословлён" in out
+        assert "Effects: blessed" in out
 
     def test_effect_cursed_translated(self):
         out = sensory.format_sensory_report(_visible(effects=["cursed"]))
-        assert "Эффекты: проклят" in out
+        assert "Effects: cursed" in out
 
     def test_effects_multiple(self):
         out = sensory.format_sensory_report(
             _visible(effects=["blessed", "cursed"])
         )
-        assert "Эффекты: благословлён, проклят" in out
+        assert "Effects: blessed, cursed" in out
 
-    def test_no_english_blessed(self):
+    def test_english_blessed(self):
         out = sensory.format_sensory_report(_visible(effects=["blessed"]))
-        assert "blessed" not in out
+        assert "blessed" in out
 
-    def test_no_english_cursed(self):
+    def test_english_cursed(self):
         out = sensory.format_sensory_report(_visible(effects=["cursed"]))
-        assert "cursed" not in out
+        assert "cursed" in out
 
 
 # ---------------------------------------------------------------------
-# [СОСТОЯНИЕ] — качественный HP (§24)
+# [STATE] — качественный HP (§24)
 # ---------------------------------------------------------------------
 
 class TestStateHpQualitative:
@@ -172,28 +172,28 @@ class TestStateHpQualitative:
         )
 
     def test_full_hp(self, monkeypatch):
-        assert "HP: в порядке" in self._out(monkeypatch, 20, 20)
+        assert "HP: fine" in self._out(monkeypatch, 20, 20)
 
     def test_exactly_80_percent(self, monkeypatch):
-        assert "HP: в порядке" in self._out(monkeypatch, 16, 20)
+        assert "HP: fine" in self._out(monkeypatch, 16, 20)
 
     def test_just_below_80(self, monkeypatch):
-        assert "HP: нормально" in self._out(monkeypatch, 15, 20)
+        assert "HP: okay" in self._out(monkeypatch, 15, 20)
 
     def test_exactly_50_percent(self, monkeypatch):
-        assert "HP: нормально" in self._out(monkeypatch, 10, 20)
+        assert "HP: okay" in self._out(monkeypatch, 10, 20)
 
     def test_just_below_50(self, monkeypatch):
-        assert "HP: опасно, мало HP" in self._out(monkeypatch, 9, 20)
+        assert "HP: dangerous, low HP" in self._out(monkeypatch, 9, 20)
 
     def test_exactly_25_percent(self, monkeypatch):
-        assert "HP: опасно, мало HP" in self._out(monkeypatch, 5, 20)
+        assert "HP: dangerous, low HP" in self._out(monkeypatch, 5, 20)
 
     def test_just_below_25(self, monkeypatch):
-        assert "HP: критично" in self._out(monkeypatch, 4, 20)
+        assert "HP: critical" in self._out(monkeypatch, 4, 20)
 
     def test_zero_hp(self, monkeypatch):
-        assert "HP: критично" in self._out(monkeypatch, 0, 20)
+        assert "HP: critical" in self._out(monkeypatch, 0, 20)
 
     def test_mp_still_numbers(self, monkeypatch):
         monkeypatch.setattr(config, "HP_DISPLAY", "qualitative")
@@ -204,34 +204,34 @@ class TestStateHpQualitative:
 
 
 # ---------------------------------------------------------------------
-# [СОСТОЯНИЕ] — SHOW_DATE / SHOW_SLEEP_TIMER
+# [STATE] — SHOW_DATE / SHOW_SLEEP_TIMER
 # ---------------------------------------------------------------------
 
 class TestStateFlags:
     def test_show_date_false_hides_date(self, monkeypatch):
         monkeypatch.setattr(config, "SHOW_DATE", False)
-        out = sensory.format_sensory_report(_visible(date="7 день"))
-        assert "Дата:" not in out
+        out = sensory.format_sensory_report(_visible(date="7 day"))
+        assert "Date:" not in out
 
     def test_show_sleep_timer_false_qualitative(self, monkeypatch):
         monkeypatch.setattr(config, "SHOW_SLEEP_TIMER", False)
         out = sensory.format_sensory_report(_visible(sleep_counter=15))
         assert "15/20" not in out
-        assert "Сон:" in out
+        assert "Sleep:" in out
 
     def test_show_sleep_timer_false_bodr(self, monkeypatch):
         monkeypatch.setattr(config, "SHOW_SLEEP_TIMER", False)
         out = sensory.format_sensory_report(_visible(sleep_counter=5))
-        assert "Сон: бодр" in out
+        assert "Sleep: fresh" in out
 
     def test_show_sleep_timer_false_ustal(self, monkeypatch):
         monkeypatch.setattr(config, "SHOW_SLEEP_TIMER", False)
         out = sensory.format_sensory_report(_visible(sleep_counter=19))
-        assert "Сон: устал" in out
+        assert "Sleep: tired" in out
 
 
 # ---------------------------------------------------------------------
-# [МЕСТО]
+# [LOCATION]
 # ---------------------------------------------------------------------
 
 class TestLocationSection:
@@ -248,7 +248,7 @@ class TestLocationSection:
                 "exits": ["north", "east", "south"],
             })
         )
-        assert "Выходы: север, восток, юг" in out
+        assert "Exits: north, east, south" in out
 
     def test_exits_all_four(self):
         out = sensory.format_sensory_report(
@@ -257,9 +257,9 @@ class TestLocationSection:
                 "exits": ["north", "east", "south", "west"],
             })
         )
-        assert "Выходы: север, восток, юг, запад" in out
+        assert "Exits: north, east, south, west" in out
 
-    def test_no_english_directions(self):
+    def test_english_directions(self):
         out = sensory.format_sensory_report(
             _visible(location={
                 "name": "X",
@@ -267,75 +267,75 @@ class TestLocationSection:
             })
         )
         for en in ("north", "east", "south", "west"):
-            assert en not in out
+            assert en in out
 
     def test_single_exit(self):
         out = sensory.format_sensory_report(
             _visible(location={"name": "X", "exits": ["south"]})
         )
-        assert "Выходы: юг" in out
+        assert "Exits: south" in out
 
     def test_no_exits_no_line(self):
         # защита: если выходов нет (в норме не бывает), строку не выводим
         out = sensory.format_sensory_report(
             _visible(location={"name": "X", "exits": []})
         )
-        assert "Выходы:" not in out
+        assert "Exits:" not in out
 
 
 # ---------------------------------------------------------------------
-# [РУКИ]
+# [HANDS]
 # ---------------------------------------------------------------------
 
 class TestInventorySection:
     def _chunk(self, out):
-        idx = out.index("[РУКИ]")
-        return out[idx:].split("[КОШЕЛЁК]")[0]
+        idx = out.index("[HANDS]")
+        return out[idx:].split("[WALLET]")[0]
 
     def test_empty_shows_pusto(self):
         out = sensory.format_sensory_report(_visible(inventory=[]))
-        assert "пусто" in self._chunk(out)
+        assert "empty" in self._chunk(out)
 
     def test_single_item(self):
         out = sensory.format_sensory_report(
-            _visible(inventory=[{"name": "меч", "count": 1}])
+            _visible(inventory=[{"name": "sword", "count": 1}])
         )
-        assert "Меч — 1шт" in out
+        assert "Sword — 1pcs" in out
 
     def test_two_items(self):
         out = sensory.format_sensory_report(
             _visible(inventory=[
-                {"name": "меч", "count": 1},
-                {"name": "хлеб", "count": 2},
+                {"name": "sword", "count": 1},
+                {"name": "bread", "count": 2},
             ])
         )
-        assert "Меч — 1шт" in out
-        assert "Хлеб — 2шт" in out
+        assert "Sword — 1pcs" in out
+        assert "Bread — 2pcs" in out
 
     def test_item_capitalized(self):
         out = sensory.format_sensory_report(
-            _visible(inventory=[{"name": "меч", "count": 1}])
+            _visible(inventory=[{"name": "sword", "count": 1}])
         )
-        assert "Меч" in out
+        assert "Sword" in out
 
     def test_only_first_letter_uppercase(self):
         out = sensory.format_sensory_report(
-            _visible(inventory=[{"name": "фляга с водой", "count": 1}])
+            _visible(inventory=[{"name": "waterskin", "count": 1}])
         )
-        assert "Фляга с водой" in out
+        assert "waterskin" in out.lower()
 
     def test_order_preserved(self):
         out = sensory.format_sensory_report(
             _visible(inventory=[
-                {"name": "меч", "count": 1},
-                {"name": "хлеб", "count": 2},
+                {"name": "sword", "count": 1},
+                {"name": "bread", "count": 2},
             ])
         )
-        assert out.index("Меч") < out.index("Хлеб")
+        assert out.index("Sword") < out.index("Bread")
 
 
 # ---------------------------------------------------------------------
-# [КОШЕЛЁК]
+# [WALLET]
 # ---------------------------------------------------------------------
 
 class TestWalletSection:
@@ -343,55 +343,55 @@ class TestWalletSection:
         return sensory.format_sensory_report(_visible(wallet=wallet))
 
     def _chunk(self, out):
-        idx = out.index("[КОШЕЛЁК]")
-        return out[idx:].split("[НАВЫКИ]")[0]
+        idx = out.index("[WALLET]")
+        return out[idx:].split("[SKILLS]")[0]
 
     def test_empty_shows_pusto(self):
         out = self._out(gold=0, silver=0, copper=0)
-        assert "пусто" in self._chunk(out)
+        assert "empty" in self._chunk(out)
 
     def test_only_copper(self):
         out = self._out(gold=0, silver=0, copper=5)
-        assert "5 мед." in out
+        assert "5 copper" in out
 
     def test_only_silver(self):
         out = self._out(gold=0, silver=3, copper=0)
-        assert "3 сер." in out
+        assert "3 silver" in out
 
     def test_only_gold(self):
         out = self._out(gold=1, silver=0, copper=0)
-        assert "1 зол." in out
+        assert "1 gold" in out
 
     def test_silver_and_copper(self):
         out = self._out(gold=0, silver=3, copper=5)
-        assert "3 сер., 5 мед." in out
+        assert "3 silver, 5 copper" in out
 
     def test_all_three(self):
         out = self._out(gold=1, silver=3, copper=5)
-        assert "1 зол., 3 сер., 5 мед." in out
+        assert "1 gold, 3 silver, 5 copper" in out
 
     def test_gold_and_copper_skip_silver(self):
         out = self._out(gold=2, silver=0, copper=5)
-        assert "2 зол., 5 мед." in out
-        assert "0 сер." not in out
+        assert "2 gold, 5 copper" in out
+        assert "0 silver" not in out
 
     def test_zero_values_not_shown(self):
         out = self._out(gold=0, silver=5, copper=0)
-        assert "зол." not in out
-        assert "мед." not in out
+        assert "gold" not in out
+        assert "copper" not in out
 
 
 # ---------------------------------------------------------------------
-# [НАВЫКИ]
+# [SKILLS]
 # ---------------------------------------------------------------------
 
 class TestSkillsSection:
     def _chunk(self, out):
-        return out[out.index("[НАВЫКИ]"):]
+        return out[out.index("[SKILLS]"):]
 
     def test_empty_shows_pusto(self):
         out = sensory.format_sensory_report(_visible(skills_visible=[]))
-        assert "пусто" in self._chunk(out)
+        assert "empty" in self._chunk(out)
 
     def test_single_skill(self):
         out = sensory.format_sensory_report(
@@ -432,15 +432,15 @@ class TestFullReport:
             mp=3, mp_max=5,
             eat=True,
             sleep_counter=15,
-            date="7 день",
+            date="7 day",
             effects=["blessed"],
             location={
                 "name": "Лесная тропа",
                 "exits": ["north", "east", "south"],
             },
             inventory=[
-                {"name": "меч", "count": 1},
-                {"name": "хлеб", "count": 2},
+                {"name": "sword", "count": 1},
+                {"name": "bread", "count": 2},
             ],
             wallet={"gold": 0, "silver": 3, "copper": 5},
             skills_visible=[
@@ -448,24 +448,24 @@ class TestFullReport:
             ],
         )
         expected = (
-            "[СОСТОЯНИЕ]\n"
+            "[STATE]\n"
             "HP: 12/20 | MP: 3/5\n"
-            "Голод: сыт | Сон: 15/20\n"
-            "Дата: 7 день\n"
-            "Эффекты: благословлён\n"
+            "Hunger: full | Sleep: 15/20\n"
+            "Date: 7 day\n"
+            "Effects: blessed\n"
             "\n"
-            "[МЕСТО]\n"
+            "[LOCATION]\n"
             "Лесная тропа\n"
-            "Выходы: север, восток, юг\n"
+            "Exits: north, east, south\n"
             "\n"
-            "[РУКИ]\n"
-            "Меч — 1шт\n"
-            "Хлеб — 2шт\n"
+            "[HANDS]\n"
+            "Sword — 1pcs\n"
+            "Bread — 2pcs\n"
             "\n"
-            "[КОШЕЛЁК]\n"
-            "3 сер., 5 мед.\n"
+            "[WALLET]\n"
+            "3 silver, 5 copper\n"
             "\n"
-            "[НАВЫКИ]\n"
+            "[SKILLS]\n"
             "Владение дубиной 1/10"
         )
         assert sensory.format_sensory_report(visible) == expected

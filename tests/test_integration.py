@@ -20,7 +20,7 @@ def make_state(mode="exploring"):
             "eat": True, "sleep_counter": 5, "date": "1 day",
             "effects": [],
             "location": {"name": "Crossroads", "exits": ["north", "east", "south", "west"]},
-            "inventory": [{"name": "хлеб", "count": 2}, {"name": "вода", "count": 1}],
+            "inventory": [{"name": "bread", "count": 2}, {"name": "water", "count": 1}],
             "wallet": {"gold": 0, "silver": 5, "copper": 0},
             "skills_visible": [],
         },
@@ -41,12 +41,12 @@ class TestSensoryReportGeneration:
     def test_report_contains_location(self):
         st = make_state()
         report = sensory.format_sensory_report(st["visible"])
-        assert "[МЕСТО]" in report
+        assert "[LOCATION]" in report
 
     def test_report_contains_inventory(self):
         st = make_state()
         report = sensory.format_sensory_report(st["visible"])
-        assert "[РУКИ]" in report
+        assert "[HANDS]" in report
 
     def test_report_is_non_empty_string(self):
         st = make_state()
@@ -57,13 +57,13 @@ class TestSensoryReportGeneration:
 
 class TestSystemPromptConstruction:
     def test_prompt_mentions_burt(self):
-        assert "Бурт" in BURT_SYSTEM_PROMPT
+        assert "Burt" in BURT_SYSTEM_PROMPT
 
     def test_prompt_has_format_instructions(self):
-        assert "ВЫБОР" in BURT_SYSTEM_PROMPT
+        assert "CHOICE" in BURT_SYSTEM_PROMPT
 
     def test_prompt_forbids_ai_behavior(self):
-        assert "ИЙ" in BURT_SYSTEM_PROMPT or "ассистент" in BURT_SYSTEM_PROMPT.lower()
+        assert "AI" in BURT_SYSTEM_PROMPT or "assistant" in BURT_SYSTEM_PROMPT.lower()
 
 
 class TestFullCycleExploration:
@@ -143,15 +143,15 @@ class TestFullCycleCombat:
         result = execute_action(attack_action, st, rng=lambda: 5)
         assert st["hidden"]["combat"] is None
         assert st["hidden"]["current_mode"] == "exploring"
-        # При завершении боя [БОЙ] в events не подмешивается.
-        assert not any("[БОЙ]" in ev for ev in result.events)
+        # При завершении боя [COMBAT] в events не подмешивается.
+        assert not any("[COMBAT]" in ev for ev in result.events)
 
     def test_cycle_block_keeps_combat(self):
         st = make_state("combat")
         _put_combat(st, [_fleeable_enemy_key()])
         block_action = Action(key="block", label="Block")
         result = execute_action(block_action, st, rng=lambda: 5)
-        assert any("защит" in e for e in result.events)
+        assert any("defensive" in e.lower() or "block" in e.lower() for e in result.events)
         assert st["hidden"]["current_mode"] == "combat"
         assert st["hidden"]["combat"] is not None
 
@@ -160,7 +160,7 @@ class TestFullCycleCombat:
         _put_combat(st, [_fleeable_enemy_key()])
         flee_action = Action(key="flee", label="Flee")
         result = execute_action(flee_action, st, rng=lambda: 5)
-        assert any("убежал" in e for e in result.events)
+        assert any("fled" in e.lower() or "flee" in e.lower() for e in result.events)
         assert st["hidden"]["current_mode"] == "exploring"
         assert st["hidden"]["combat"] is None
 
@@ -223,12 +223,12 @@ class TestLLMClientIntegration:
     def test_extract_answer_from_valid_response(self):
         raw = {
             "choices": [{
-                "message": {"content": "Тьма вокруг. Я иду на насер."},
+                "message": {"content": "Dark вокруг. Я иду на насер."},
                 "finish_reason": "stop"
             }]
         }
         answer = extract_answer(raw)
-        assert answer == "Тьма вокруг. Я иду на насер."
+        assert answer == "Dark вокруг. Я иду на насер."
 
     def test_extract_answer_empty_content(self):
         raw = {"choices": [{"message": {"content": ""}}]}
@@ -267,7 +267,7 @@ class TestStateMutationConsistency:
         assert go_action is not None
         execute_action(go_action, st, rng=lambda: 4)
         new_name = st["visible"]["location"]["name"]
-        assert new_name == "Road"  # world preset: north = дорога
+        assert new_name == "Road"  # world preset: north = road
 
     def test_hp_restored_after_sleep(self):
         st = make_state()

@@ -9,7 +9,7 @@
                   совместимый с инвентарём state.
   coins_copper  — медяки, оркестратор кладёт в кошелёк.
 
-Дракон выдаёт весь лут без кубика (§22).
+Dragon выдаёт весь лут без кубика (§22).
 При бегстве Бурта лута нет — решает оркестратор, не loot.py.
 """
 
@@ -45,38 +45,38 @@ _ANIMALS: frozenset[str] = frozenset({"wolf", "boar", "bear"})
 def _loot_goblin(roll: int) -> LootDrop:
     if roll <= 4:
         return LootDrop()
-    return LootDrop(items=[{"name": "кинжал гоблина", "count": 1}])
+    return LootDrop(items=[{"name": "goblin_dagger", "count": 1}])
 
 
 def _loot_goblin_shaman(roll: int) -> LootDrop:
     if roll <= 4:
         return LootDrop()
-    return LootDrop(items=[{"name": "колдовской посох гоблина", "count": 1}])
+    return LootDrop(items=[{"name": "goblin_staff", "count": 1}])
 
 
 def _loot_bandit(roll: int) -> LootDrop:
     if roll <= 2:
-        return LootDrop(items=[{"name": "повязка", "count": 1}])
+        return LootDrop(items=[{"name": "bandage", "count": 1}])
     if roll <= 4:
         return LootDrop(coins_copper=5)
-    return LootDrop(items=[{"name": "меч низкого качества", "count": 1}])
+    return LootDrop(items=[{"name": "low_quality_sword", "count": 1}])
 
 
 def _loot_animal(roll: int) -> LootDrop:
     if roll <= 3:
         return LootDrop()
     if roll <= 5:
-        return LootDrop(items=[{"name": "клыки", "count": 2}])
-    return LootDrop(items=[{"name": "шкура", "count": 1}])
+        return LootDrop(items=[{"name": "fangs", "count": 2}])
+    return LootDrop(items=[{"name": "pelt", "count": 1}])
 
 
 def _loot_dragon(roll: int) -> LootDrop:
-    # Кубик игнорируется. Дракон выдаёт всё.
+    # Кубик игнорируется. Dragon выдаёт всё.
     return LootDrop(
         items=[
-            {"name": "чешуя дракона", "count": 1},
-            {"name": "драконьи клыки", "count": 2},
-            {"name": "кость дракона", "count": 1},
+            {"name": "dragon_scale", "count": 1},
+            {"name": "dragon_fangs", "count": 2},
+            {"name": "dragon_bone", "count": 1},
         ]
     )
 
@@ -87,7 +87,7 @@ def roll_loot(enemy_key: str, roll: int) -> LootDrop:
     """
     Лут с одного врага.
 
-    Дракон — без кубика (roll игнорируется, но валидируется).
+    Dragon — без кубика (roll игнорируется, но валидируется).
     Неизвестный враг — пустой дроп, не ошибка.
     """
     _validate_roll(roll)
@@ -113,7 +113,7 @@ def collect_loot(enemy_keys: list[str], rolls: list[int]) -> LootDrop:
     Лут со всех убитых врагов.
 
     enemy_keys и rolls — параллельные списки, длины должны совпадать.
-    items конкатенируются в порядке врагов, coins_copper суммируется.
+    items конкатенируются fine врагов, coins_copper суммируется.
 
     Вызывается только при полной победе (все враги убиты).
     При бегстве Бурта лута нет — это решает оркестратор.

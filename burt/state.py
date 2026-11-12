@@ -21,18 +21,18 @@ from typing import Any
 # ---------------------------------------------------------------------
 
 ROLE_NAMES: tuple[str, ...] = (
-    "торговец",
-    "стражник",
-    "крестьянин",
-    "староста",
-    "трактирщик",
-    "кузнец",
-    "рыбак",
-    "ребёнок",
-    "ветеран",
-    "служитель_церкви",
-    "чернокнижник",
-    "маг",
+    "merchant",
+    "guard",
+    "peasant",
+    "elder",
+    "tavernkeeper",
+    "blacksmith",
+    "fisherman",
+    "child",
+    "veteran",
+    "cleric",
+    "necromancer",
+    "mage",
 )
 
 DIRECTIONS: tuple[str, ...] = ("north", "south", "east", "west")
@@ -52,7 +52,7 @@ VALID_STATES: set[str] = {"exploring", "dialog", "combat"}
 VALID_ELEMENTS: set[str | None] = {None, "fire", "water", "earth", "air"}
 VALID_ALIGNMENTS: set[str | None] = {None, "light", "dark"}
 
-STARTING_LOCATION_NAME: str = "Развилка"
+STARTING_LOCATION_NAME: str = "Crossroads"
 # Must match world.START_NODE_ID ("start").
 STARTING_NODE_ID: str = "start"
 
@@ -100,7 +100,7 @@ def create_initial_state(
             "mp_max": STARTING_MP,
             "eat": False,
             "sleep_counter": 0,
-            "date": "1 день",
+            "date": "1 day",
             "effects": [],
             "location": {
                 "name": STARTING_LOCATION_NAME,

@@ -34,9 +34,9 @@ OPPOSITE = {
 START_NODE_ID = "start"
 
 LOCATION_TYPES = frozenset({
-    "старт", "кустарник",
-    "лес", "поле", "степь", "болото", "река", "дорога", "деревня",
-    "храм", "подземелье",
+    "crossroads", "thicket",
+    "forest", "field", "steppe", "swamp", "river", "road", "village",
+    "temple", "dungeon",
 })
 
 # Индексы в DIRECTIONS: north=0, east=1, south=2, west=3.
@@ -63,29 +63,29 @@ def _check_d6(roll: int, name: str = "roll") -> None:
 def roll_location_type(roll: int, roll_size: int | None = None) -> str:
     """Тип локации по 1d6 (+ уточняющий бросок при roll=5 и roll=6).
 
-    roll=1-2 → лес
-    roll=3   → поле
-    roll=4   → степь
-    roll=5   → roll_size 1-3 → болото / река / дорога
-    roll=6   → roll_size 1-6 → храм (1) / подземелье (2) / деревня (3-6)
+    roll=1-2 → forest
+    roll=3   → field
+    roll=4   → steppe
+    roll=5   → roll_size 1-3 → swamp / river / road
+    roll=6   → roll_size 1-6 → temple (1) / dungeon (2) / village (3-6)
 
-    "старт" и "кустарник" здесь не выпадают никогда.
+    "crossroads" и "thicket" здесь не выпадают никогда.
     """
     _check_d6(roll)
 
     if roll == 1 or roll == 2:
-        return "лес"
+        return "forest"
     if roll == 3:
-        return "поле"
+        return "field"
     if roll == 4:
-        return "степь"
+        return "steppe"
 
     if roll == 5:
         if roll_size is None:
             raise ValueError("roll=5 requires roll_size (1..3)")
         if roll_size not in (1, 2, 3):
             raise ValueError(f"roll_size must be 1..3, got {roll_size!r}")
-        return {1: "болото", 2: "река", 3: "дорога"}[roll_size]
+        return {1: "swamp", 2: "river", 3: "road"}[roll_size]
 
     # roll == 6
     if roll_size is None:
@@ -93,10 +93,10 @@ def roll_location_type(roll: int, roll_size: int | None = None) -> str:
     if not isinstance(roll_size, int) or not (1 <= roll_size <= 6):
         raise ValueError(f"roll_size must be 1..6, got {roll_size!r}")
     if roll_size == 1:
-        return "храм"
+        return "temple"
     if roll_size == 2:
-        return "подземелье"
-    return "деревня"
+        return "dungeon"
+    return "village"
 
 
 # ---------------------------------------------------------------------
@@ -201,21 +201,21 @@ def create_start_graph() -> dict:
     """Стартовый граф §37.
 
     Центр "start" с 4 соседями:
-      north → дорога
-      east  → кустарник
-      south → лес
-      west  → река
+      north → road
+      east  → thicket
+      south → forest
+      west  → river
 
-    У соседей только одно ребро — обратно на старт.
+    У соседей только одно ребро — обратно на crossroads.
     """
     graph: dict = {}
-    graph[START_NODE_ID] = _empty_node("старт", entered=True)
+    graph[START_NODE_ID] = _empty_node("crossroads", entered=True)
 
     preset = {
-        "north": "дорога",
-        "east": "кустарник",
-        "south": "лес",
-        "west": "река",
+        "north": "road",
+        "east": "thicket",
+        "south": "forest",
+        "west": "river",
     }
 
     for d in DIRECTIONS:

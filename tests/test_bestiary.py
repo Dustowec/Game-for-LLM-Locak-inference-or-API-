@@ -40,7 +40,7 @@ class TestGoblin:
         assert (e.damage_min, e.damage_max) == (1, 2)
 
     def test_weapon(self):
-        assert ENEMIES["goblin"].weapon == "кинжал гоблина"
+        assert ENEMIES["goblin"].weapon == "goblin_dagger"
 
     def test_no_spell(self):
         assert ENEMIES["goblin"].spell_damage_min is None
@@ -60,7 +60,7 @@ class TestGoblinShaman:
         assert (e.damage_min, e.damage_max) == (0, 1)
 
     def test_weapon(self):
-        assert ENEMIES["goblin_shaman"].weapon == "колдовской посох гоблина"
+        assert ENEMIES["goblin_shaman"].weapon == "goblin_staff"
 
     def test_spell_damage(self):
         e = ENEMIES["goblin_shaman"]
@@ -107,7 +107,7 @@ class TestBandit:
         assert (e.damage_min, e.damage_max) == (2, 4)
 
     def test_weapon(self):
-        assert ENEMIES["bandit"].weapon == "меч"
+        assert ENEMIES["bandit"].weapon == "sword"
 
 
 class TestBear:
@@ -119,7 +119,7 @@ class TestBear:
         assert (e.damage_min, e.damage_max) == (5, 9)
 
     def test_passive_tag(self):
-        # Медведь не атакует сам (§21, уточнено автором).
+        # Bear не атакует сам (§21, уточнено автором).
         assert "passive" in ENEMIES["bear"].tags
 
 

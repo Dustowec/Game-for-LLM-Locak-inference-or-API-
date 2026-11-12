@@ -42,7 +42,7 @@ _BASE_URLS = {
 }
 
 # Fallback answer when LLM is unreachable twice in a row
-_FALLBACK_ANSWER = "Тьма поглощает. Ты не помнишь куда шёл."
+_FALLBACK_ANSWER = "Darkness consumes. You don't remember where you were going."
 
 # Number of retries on transient failure
 _MAX_RETRIES = 1

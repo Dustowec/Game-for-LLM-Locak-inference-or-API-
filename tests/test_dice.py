@@ -69,7 +69,7 @@ def test_attack_roll3_min_damage():
 
 
 def test_attack_roll4_avg_damage_floor():
-    # меч 2-4: avg = (2+4)//2 = 3
+    # sword 2-4: avg = (2+4)//2 = 3
     r = resolve_attack(roll=4, damage_min=2, damage_max=4, master=0, modifier=0)
     assert r.hit is True
     assert r.damage == 3
@@ -88,7 +88,7 @@ def test_attack_roll6_double_max():
 
 
 def test_attack_narrow_pool_dublina_1_2():
-    # дубина 1-2: диапазон <3 клеток -> средний = минимальный
+    # club 1-2: диапазон <3 клеток -> средний = минимальный
     # 3 -> min, 4 -> min, 5 -> max, 6 -> 2*max
     assert resolve_attack(3, 1, 2).damage == 1
     assert resolve_attack(4, 1, 2).damage == 1

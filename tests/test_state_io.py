@@ -78,22 +78,22 @@ def test_round_trip_returns_equal_state(state_path: Path, sample_state):
 
 def test_round_trip_preserves_russian_keys(state_path: Path, sample_state):
     """§30: репутация по ролям — русские ключи, UTF-8."""
-    sample_state["hidden"]["reputation"]["кузнец"] = 5
-    sample_state["hidden"]["reputation"]["чернокнижник"] = -3
+    sample_state["hidden"]["reputation"]["blacksmith"] = 5
+    sample_state["hidden"]["reputation"]["necromancer"] = -3
     save_state(state_path, sample_state)
     loaded = load_state(state_path)
-    assert loaded["hidden"]["reputation"]["кузнец"] == 5
-    assert loaded["hidden"]["reputation"]["чернокнижник"] == -3
+    assert loaded["hidden"]["reputation"]["blacksmith"] == 5
+    assert loaded["hidden"]["reputation"]["necromancer"] == -3
 
 
 def test_round_trip_preserves_nested_structures(state_path: Path, sample_state):
     sample_state["visible"]["inventory"] = [
-        {"name": "меч", "count": 1},
-        {"name": "фляга с водой", "count": 1, "charges": 2, "charges_max": 2},
+        {"name": "sword", "count": 1},
+        {"name": "waterskin", "count": 1, "charges": 2, "charges_max": 2},
     ]
     sample_state["hidden"]["location_graph"]["start"]["exits"]["north"] = "node_2"
     sample_state["hidden"]["location_graph"]["node_2"] = {
-        "type": "лес",
+        "type": "forest",
         "entered": True,
         "exits": {"north": None, "south": "start", "east": None, "west": None},
     }
@@ -106,17 +106,17 @@ def test_round_trip_preserves_nested_structures(state_path: Path, sample_state):
 
 
 def test_round_trip_preserves_unicode_values(state_path: Path, sample_state):
-    sample_state["visible"]["location"]["name"] = "Развилка у трёх дубов"
+    sample_state["visible"]["location"]["name"] = "Crossroads у трёх дубов"
     save_state(state_path, sample_state)
     loaded = load_state(state_path)
-    assert loaded["visible"]["location"]["name"] == "Развилка у трёх дубов"
+    assert loaded["visible"]["location"]["name"] == "Crossroads у трёх дубов"
 
 
 def test_save_writes_utf8_no_ascii_escape(state_path: Path, sample_state):
     """Файл должен быть человекочитаемым, не \\uXXXX."""
     save_state(state_path, sample_state)
     raw = state_path.read_text(encoding="utf-8")
-    assert "кузнец" in raw
+    assert "blacksmith" in raw
     assert "\\u" not in raw
 
 

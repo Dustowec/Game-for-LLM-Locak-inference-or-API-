@@ -12,8 +12,8 @@
        counter с 6 уходит тому же врагу.
   4. Раунд++.
 
-Дракон: дыхание на turns_taken 0, 3, 6 (пока breaths_used < 3).
-Шаман: каст пока MP > 0, потом посох со штрафом −1.
+Dragon: дыхание на turns_taken 0, 3, 6 (пока breaths_used < 3).
+Шаман: каст пока MP > 0, потом staff со штрафом −1.
 """
 
 import pytest
@@ -339,7 +339,7 @@ class TestPostFleeEnemyTurn:
         assert r.burt.hp == 9
 
     def test_flee_3_no_hit(self):
-        # flee roll=3, hit_roll=3 → ушёл без урона.
+        # flee roll=3, hit_roll=3 → ушёл без damage.
         c = start_combat(["wolf"], "burt")
         burt = make_burt()
         r = resolve_round(c, burt, "flee", None, rng_from([3, 3]))
@@ -418,7 +418,7 @@ class TestShaman:
         assert r.combat.enemies[0].mp == 4
 
     def test_shaman_staff_after_mp(self):
-        # mp=0 → посох, штраф −1. roll=3 → eff 2 → промах.
+        # mp=0 → staff, штраф −1. roll=3 → eff 2 → промах.
         c = start_combat(["goblin_shaman"], "burt")
         c.enemies[0].mp = 0
         burt = make_burt(hp=20, hp_max=20)
@@ -448,7 +448,7 @@ class TestEnemySpellVsBlock:
     блок семантический, не механический. Код _enemy_spell стал
     правильным на случай если архитектуру расширят.
 
-    Гоблин-шаман: spell_damage_min=3, spell_damage_max=6.
+    goblin_shaman: spell_damage_min=3, spell_damage_max=6.
     Resolve attack roll=3 на [3..6] → min damage = 3.
     """
 
@@ -494,7 +494,7 @@ class TestEnemySpellVsBlock:
 
 
 
-# ─── Дракон ────────────────────────────────────────────────
+# ─── Dragon ────────────────────────────────────────────────
 
 class TestDragon:
     def test_breath_first_turn(self):
@@ -506,7 +506,7 @@ class TestDragon:
         assert r.combat.enemies[0].breaths_used == 1
 
     def test_bite_second_turn(self):
-        # turns_taken=1 → клыки. roll=3 → min 16. burt 50→34.
+        # turns_taken=1 → fangs. roll=3 → min 16. burt 50→34.
         c = start_combat(["dragon"], "burt")
         c.enemies[0].turns_taken = 1
         c.enemies[0].breaths_used = 1
@@ -526,7 +526,7 @@ class TestDragon:
         assert r.combat.enemies[0].breaths_used == 2
 
     def test_no_more_than_3_breaths(self):
-        # breaths_used=3 → больше не дышит. Клыки, min 16.
+        # breaths_used=3 → больше не дышит. Fangs, min 16.
         c = start_combat(["dragon"], "burt")
         c.enemies[0].turns_taken = 9
         c.enemies[0].breaths_used = 3

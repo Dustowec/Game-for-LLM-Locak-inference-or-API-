@@ -14,19 +14,19 @@
     продажа Буртом:  floor(floor(base * 0.5) * mod)
 
 Все цены — в МЕДЯКАХ:
-    1 сер. = 10 мед.
-    1 зол. = 100 мед.
+    1 silver = 10 copper
+    1 gold = 100 copper
 Округление ВНИЗ на каждом шаге (math.floor).
 
 Правило «раз на сделку» = весь диалог:  модификатор роли кидается
 один раз и применяется ко всем покупкам/продажам внутри диалога.
 Это забота оркестратора, не trade.py — здесь только расчёт.
 
-Правило «чернокнижник не покупает у паладина» — тоже не здесь.
+Правило «necromancer не покупает у паладина» — тоже не здесь.
 Это фильтр на уровне npc/loop. trade.py ничего не знает о вере.
 
 Округление и особенности:
-    повязка (base=1) при продаже уходит за 0 мед. — следствие
+    bandage (base=1) при продаже уходит за 0 copper — следствие
     формулы floor(floor(1 * 0.5) * mod) = floor(0 * mod) = 0.
     Никаких минимумов не вводим: формула есть формула.
 """
@@ -42,21 +42,21 @@ from typing import Callable
 
 BASE_PRICES: dict[str, int] = {
     # еда и расходники
-    "хлеб": 2,
-    "рыба": 2,
-    "вяленая рыба": 3,
-    "фляга с водой": 2,               # малая, 2/2
-    "фляга с водой большая": 10,      # 5/5, 1 сер.
-    "спальный мешок": 5,
-    "комната в таверне": 5,           # одноразовый товар: ночь
+    "bread": 2,
+    "fish": 2,
+    "dried_fish": 3,
+    "waterskin": 2,               # малая, 2/2
+    "large_waterskin": 10,      # 5/5, 1 silver
+    "bedroll": 5,
+    "tavern_room": 5,           # одноразовый товар: ночь
 
     # оружие
-    "дубина": 10,                     # 1 сер.
-    "копьё": 20,                      # 2 сер.
-    "меч низкого качества": 10,       # 1 сер.
-    "меч обычный": 30,                # 3 сер.
-    "меч высокого качества": 60,      # 6 сер.
-    "посох": 100,                     # 1 зол.
+    "club": 10,                     # 1 silver
+    "spear": 20,                      # 2 silver
+    "low_quality_sword": 10,       # 1 silver
+    "ordinary_sword": 30,                # 3 silver
+    "high_quality_sword": 60,      # 6 silver
+    "staff": 100,                     # 1 gold
 }
 
 
@@ -65,14 +65,14 @@ BASE_PRICES: dict[str, int] = {
 # ============================================================
 
 LOOT_PRICES: dict[str, int] = {
-    "кинжал гоблина": 3,
-    "колдовской посох гоблина": 6,
-    "повязка": 1,
-    "клыки": 3,                        # за пару (2 шт.)
-    "шкура": 10,                       # 1 сер.
-    "чешуя дракона": 1000,             # 10 зол.
-    "драконьи клыки": 500,             # 5 зол. (за пару)
-    "кость дракона": 1000,             # 10 зол.
+    "goblin_dagger": 3,
+    "goblin_staff": 6,
+    "bandage": 1,
+    "fangs": 3,                        # за пару (2 pcs.)
+    "pelt": 10,                       # 1 silver
+    "dragon_scale": 1000,             # 10 gold
+    "dragon_fangs": 500,             # 5 gold (за пару)
+    "dragon_bone": 1000,             # 10 gold
 }
 
 
@@ -81,42 +81,42 @@ LOOT_PRICES: dict[str, int] = {
 # ============================================================
 
 TRADE_ROLES: frozenset[str] = frozenset({
-    "староста",
-    "кузнец",
-    "торговец",
-    "рыбак",
-    "трактирщик",
-    "маг",
-    "чернокнижник",
+    "elder",
+    "blacksmith",
+    "merchant",
+    "fisherman",
+    "tavernkeeper",
+    "mage",
+    "necromancer",
 })
 
 # Что каждая роль продаёт Бурту.
 # Правило: всё, что в BASE_PRICES, обязано быть у кого-то в ROLE_SELLS
 # (иначе товар не купить). См. тест test_all_sold_items_are_buyable.
 ROLE_SELLS: dict[str, frozenset[str]] = {
-    "староста": frozenset({
-        "спальный мешок",
-        "фляга с водой",
+    "elder": frozenset({
+        "bedroll",
+        "waterskin",
     }),
-    "кузнец": frozenset({
-        "дубина",
-        "копьё",
-        "меч низкого качества",
-        "меч обычный",
-        "меч высокого качества",
+    "blacksmith": frozenset({
+        "club",
+        "spear",
+        "low_quality_sword",
+        "ordinary_sword",
+        "high_quality_sword",
     }),
-    "торговец": frozenset(BASE_PRICES.keys()),  # всё
-    "рыбак": frozenset({
-        "рыба",
-        "вяленая рыба",
+    "merchant": frozenset(BASE_PRICES.keys()),  # всё
+    "fisherman": frozenset({
+        "fish",
+        "dried_fish",
     }),
-    "трактирщик": frozenset({
-        "хлеб",
-        "фляга с водой",
-        "комната в таверне",
+    "tavernkeeper": frozenset({
+        "bread",
+        "waterskin",
+        "tavern_room",
     }),
-    "маг": frozenset({"посох"}),
-    "чернокнижник": frozenset({"посох"}),
+    "mage": frozenset({"staff"}),
+    "necromancer": frozenset({"staff"}),
 }
 
 

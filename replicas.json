@@ -1,1016 +1,953 @@
 {
   "roles": {
-    "староста": {
+    "elder": {
       "intro": [
-        "Я — староста этой деревни.",
-        "С чем пришёл, странник?",
-        "Говори. Время дорого."
+        "I am the elder of this village.",
+        "What brings you here, wanderer?",
+        "Speak. Time is precious."
       ],
-
       "fail_angry": [
-        "Стража! Уберите этого!",
-        "Ещё слово — и я тебя вышвырну из деревни!",
-        "Ты забываешься. Я здесь власть."
+        "Guards! Remove this one!",
+        "One more word and I'll have you thrown out of the village!",
+        "You forget yourself. I am the law here."
       ],
       "fail": [
-        "Не знаю я ничего.",
-        "Не до тебя. Дел много.",
-        "Проходи, не задерживайся."
+        "I know nothing.",
+        "Not now. I have much to do.",
+        "Move along. Don't linger."
       ],
       "neutral": [
-        "Может, и знаю.",
-        "Тут всякое бывает. Не всё для чужих ушей.",
-        "Сначала скажи, зачем тебе."
+        "Maybe I do know.",
+        "Things happen here. Not everything is for outsiders' ears.",
+        "First tell me why you want to know."
       ],
       "success": [
-        "Ладно, слушай.",
-        "Скажу, чего знаю.",
-        "Хорошо. Слушай внимательно."
+        "Fine, listen.",
+        "I'll tell you what I know.",
+        "Good. Listen carefully."
       ],
       "success_bonus": [
-        "На, держи. За доброе слово.",
-        "Скажу тебе больше. Только между нами.",
-        "Есть у меня человек. Зайди, скажи от меня."
+        "Here, take this. For a kind word.",
+        "I'll tell you more. Just between us.",
+        "I know a man. Go see him. Tell him I sent you."
       ],
-
       "charm_fail": [
-        "Не льсти. Стар я для этого.",
-        "Льстецов не люблю.",
-        "Скажешь тоже. Дело говори."
+        "Don't flatter me. I'm too old for that.",
+        "I don't like flatterers.",
+        "Save it. Get to the point."
       ],
       "charm_neutral": [
-        "Ну-ну.",
-        "Ладно, ладно.",
-        "Ой, скажешь."
+        "Well, well.",
+        "Fine, fine.",
+        "Oh, you."
       ],
       "charm_success": [
-        "Ох, хитёр. Ладно, слушаю.",
-        "Умеешь говорить. Скажу.",
-        "Ну как такому откажешь."
+        "Oh, you're clever. Fine, I'm listening.",
+        "You know how to talk. I'll tell you.",
+        "How could I refuse someone like that."
       ],
-
       "threat_fail": [
-        "Мне?! В моей деревне?! Стража!",
-        "Ты кто такой, чтобы мне угрожать?!",
-        "Вон отсюда, пока цел!"
+        "Me?! In my own village?! Guards!",
+        "Who are you to threaten me?!",
+        "Get out before you regret it!"
       ],
       "threat_neutral": [
-        "Тише ты, тише.",
-        "Не нарывайся.",
-        "Я тебя не боюсь."
+        "Easy now, easy.",
+        "Don't push your luck.",
+        "I'm not afraid of you."
       ],
       "threat_success": [
-        "Ладно, ладно. Без шума.",
-        "Хорошо. Только уйди.",
-        "Договоримся. Не здесь."
+        "Fine, fine. Keep it quiet.",
+        "Alright. Just leave.",
+        "We'll make a deal. Not here."
       ],
-
       "trade_fail": [
-        "За так не отдам.",
-        "Цена — как сказал.",
-        "Не торгуюсь с чужими."
+        "I won't give it away for nothing.",
+        "The price is what I said.",
+        "I don't haggle with strangers."
       ],
       "trade_neutral": [
-        "Ладно, так и быть.",
-        "Бери, только не задерживайся.",
-        "Считай, договорились."
+        "Fine, so be it.",
+        "Take it, just don't linger.",
+        "Consider it settled."
       ],
       "trade_success": [
-        "Эх, бери дешевле. С тебя — доброе слово.",
-        "Для тебя — по-божески.",
-        "Ладно, уступлю. Только сегодня."
+        "Eh, take it cheaper. A kind word from you is enough.",
+        "For you — a fair price.",
+        "Fine, I'll give in. Just for today."
       ],
-
       "bribe_fail": [
-        "Мне?! Взятку?!",
-        "Убери, пока не увидели.",
-        "Я не продаюсь."
+        "Me?! A bribe?!",
+        "Put that away before someone sees.",
+        "I'm not for sale."
       ],
       "bribe_neutral": [
-        "Маловато.",
-        "Добавь — тогда поговорим.",
-        "Не за так."
+        "Not enough.",
+        "Add more and we'll talk.",
+        "Not for free."
       ],
       "bribe_success": [
-        "Ладно. Слушаю.",
-        "Я тебя не видел.",
-        "Только тихо. У стен уши."
+        "Fine. I'm listening.",
+        "I didn't see you.",
+        "Keep it quiet. Walls have ears."
       ],
-
       "quest_none": [
-        "Нет у меня работы для тебя.",
-        "Работы нет. Иди.",
-        "Не до тебя."
+        "I have no work for you.",
+        "No work. Go.",
+        "Not now."
       ],
       "quest_give": [
-        "Есть одно дело. Слушай.",
-        "Хм. Может, ты и сгодишься.",
-        "Есть. Только не для болтунов."
+        "There is one matter. Listen.",
+        "Hm. Maybe you'll do.",
+        "There is. But not for chatterboxes."
       ],
       "quest_already": [
-        "Ты ещё не сделал.",
-        "Сначала то доделай.",
-        "Помню. Иди работай."
+        "You haven't finished yet.",
+        "Finish that first.",
+        "I remember. Go work."
       ]
     },
-
-    "крестьянин": {
+    "peasant": {
       "intro": [
-        "Чего надобно?",
-        "Чего тебе?",
-        "Ну?"
+        "What do you want?",
+        "What is it?",
+        "Well?"
       ],
-
       "fail_angry": [
-        "Пошёл прочь, пока вилы не достал!",
-        "Ещё слово — и собак спущу.",
-        "Убирайся, пока цел."
+        "Get lost before I grab my pitchfork!",
+        "One more word and I'll set the dogs on you.",
+        "Get out before you regret it."
       ],
       "fail": [
-        "Не знаю я ничего.",
-        "Не до тебя.",
-        "Проходи мимо."
+        "I know nothing.",
+        "Not now.",
+        "Move along."
       ],
       "neutral": [
-        "Может, и знаю. Может, нет.",
-        "Слышал краем уха, да не помню.",
-        "Тут всякое бывает."
+        "Maybe I know. Maybe not.",
+        "I heard a thing or two, but I don't remember.",
+        "Things happen here."
       ],
       "success": [
-        "Ладно, слушай.",
-        "Скажу, что знаю.",
-        "Ну, раз спрашиваешь."
+        "Fine, listen.",
+        "I'll tell you what I know.",
+        "Well, since you ask."
       ],
       "success_bonus": [
-        "На, держи монетку. За доброе слово.",
-        "Слышал я про одно место. Сходи, глянь.",
-        "Возьми хлеба, не голодный вид у тебя."
+        "Here, take a coin. For a kind word.",
+        "I heard about a place. Go take a look.",
+        "Take some bread, you look hungry."
       ],
-
       "threat_fail": [
-        "Не пугай, я пуганый.",
-        "Уйди, а то крикну.",
-        "Что ты мне сделаешь, дурак?"
+        "Don't scare me, I've been scared before.",
+        "Leave or I'll scream.",
+        "What will you do to me, fool?"
       ],
       "threat_neutral": [
-        "Тише ты, тише.",
-        "Чего размахался?",
-        "Ну чего тебе?"
+        "Easy now, easy.",
+        "Why are you waving your arms?",
+        "What do you want?"
       ],
       "threat_success": [
-        "Ладно, ладно. Не бей.",
-        "Скажу. Только не тронь.",
-        "Возьми что хочешь, только уйди."
+        "Fine, fine. Don't hit.",
+        "I'll tell you. Just don't touch me.",
+        "Take what you want, just leave."
       ]
     },
-
-    "крестьянка": {
+    "peasant_woman": {
       "intro": [
-        "Привет тебе, странник.",
-        "Здравствуй, добрый человек.",
-        "Чего тебе, мил человек?"
+        "Greetings to you, wanderer.",
+        "Hello, kind man.",
+        "What do you want, dear?"
       ],
-
       "fail_angry": [
-        "Ах ты! Пошёл прочь, охальник!",
-        "Да что ты себе позволяешь!",
-        "Уйди, а то людей позову!"
+        "Hey! Get out, you scoundrel!",
+        "How dare you!",
+        "Leave or I'll call for help!"
       ],
       "fail": [
-        "Не знаю я ничего.",
-        "Не до разговоров мне.",
-        "Иди своей дорогой."
+        "I know nothing.",
+        "I have no time to talk.",
+        "Go your own way."
       ],
       "neutral": [
-        "Может, и слыхала что.",
-        "Тут разное болтают.",
-        "Не всякое скажешь чужому."
+        "Maybe I've heard something.",
+        "People say all sorts of things.",
+        "Not everything can be told to a stranger."
       ],
       "success": [
-        "Ладно, слушай.",
-        "Скажу, чего знаю.",
-        "Доброму человеку не жалко."
+        "Fine, listen.",
+        "I'll tell you what I know.",
+        "For a kind man, I don't mind."
       ],
       "success_bonus": [
-        "На, возьми хлеба. Худой ты какой-то.",
-        "Зайди вечером, накормлю.",
-        "Скажу тебе одну вещь. Только никому."
+        "Here, take some bread. You look thin.",
+        "Come by in the evening, I'll feed you.",
+        "I'll tell you one thing. Just don't tell anyone."
       ],
-
       "charm_fail": [
-        "Охальник! Вот тебе, вот тебе!",
-        "Ах ты ласковый какой! На, получай!",
-        "Не льсти, не люблю таких."
+        "Scoundrel! Take that, and that!",
+        "Oh, you're a smooth one! Here, take this!",
+        "Don't flatter me, I don't like your kind."
       ],
       "charm_neutral": [
-        "Ну и льстец.",
-        "Ой, скажешь тоже.",
-        "Ладно тебе, говори дело."
+        "What a flatterer.",
+        "Oh, you don't say.",
+        "Enough, get to the point."
       ],
       "charm_success": [
-        "Ой, ну что ты. Скажу, скажу.",
-        "Ласковый ты. Слушаю.",
-        "Ну как такому откажешь."
+        "Oh, what are you doing. I'll tell you, I'll tell you.",
+        "You're a smooth one. I'm listening.",
+        "How could I refuse someone like that."
       ]
     },
-
-    "кузнец": {
+    "blacksmith": {
       "intro": [
-        "Привет! Чего надобно? Тебя подковать? Аль оружие какое купить хочешь?",
-        "Заходи. Молот в руке, железо горячее — говори быстрее.",
-        "Чего надо? Купить, починить, аль просто поглазеть?"
+        "Hey! What do you need? A horseshoe? Or some weapon to buy?",
+        "Come in. Hammer in hand, iron hot — talk fast.",
+        "What do you want? To buy, to fix, or just to gawk?"
       ],
-
       "fail_angry": [
-        "Пошёл прочь из кузни! Здесь огонь, здесь не место болтунам!",
-        "Ещё слово — и я тебя молотом!",
-        "Уйди, пока я добрый!"
+        "Get out of the forge! There's fire here, no place for chatterboxes!",
+        "One more word and I'll hit you with the hammer!",
+        "Leave while I'm still kind!"
       ],
       "fail": [
-        "Не знаю я ничего.",
-        "Не до тебя. Железо стынет.",
-        "Проходи, не мешай."
+        "I know nothing.",
+        "Not now. The iron is cooling.",
+        "Move along, don't bother me."
       ],
       "neutral": [
-        "Может, и слышал.",
-        "Тут всякое бывает. Мне не до слухов.",
-        "Купи что — поговорим."
+        "Maybe I heard something.",
+        "Things happen here. I have no time for rumors.",
+        "Buy something — then we'll talk."
       ],
       "success": [
-        "Ладно, слушай.",
-        "Скажу, чего знаю.",
-        "Заходи, поговорим."
+        "Fine, listen.",
+        "I'll tell you what I know.",
+        "Come in, we'll talk."
       ],
       "success_bonus": [
-        "На, держи. Мелочь, а в дороге сгодится.",
-        "Слышал я про одно место. Сходи, глянь.",
-        "Есть у меня знакомец. Зайди, скажи от меня."
+        "Here, take this. A small thing, but it'll serve you on the road.",
+        "I heard about a place. Go take a look.",
+        "I know a man. Go see him. Tell him I sent you."
       ],
-
       "trade_fail": [
-        "За так не отдам.",
-        "Цена — как сказал. Железо не дешевеет.",
-        "Не торгуюсь. Не базар."
+        "I won't give it away for nothing.",
+        "The price is what I said. Iron doesn't get cheaper.",
+        "I don't haggle. This isn't a market."
       ],
       "trade_neutral": [
-        "Ладно, так и быть.",
-        "Бери. Только не тупи.",
-        "Считай, договорились."
+        "Fine, so be it.",
+        "Take it. Just don't dull it.",
+        "Consider it settled."
       ],
       "trade_success": [
-        "Эх, бери дешевле. С тебя — доброе слово.",
-        "Для тебя — по-божески.",
-        "Ладно, уступлю. Только сегодня."
+        "Eh, take it cheaper. A kind word from you is enough.",
+        "For you — a fair price.",
+        "Fine, I'll give in. Just for today."
       ],
-
       "quest_none": [
-        "Нет у меня работы.",
-        "Работы нет. Покупай или уходи.",
-        "Не до тебя."
+        "I have no work.",
+        "No work. Buy or leave.",
+        "Not now."
       ],
       "quest_give": [
-        "Есть одно дело. Слушай.",
-        "Хм. Может, ты и сгодишься.",
-        "Есть. Только не для болтунов."
+        "There is one matter. Listen.",
+        "Hm. Maybe you'll do.",
+        "There is. But not for chatterboxes."
       ],
       "quest_already": [
-        "Ты ещё не сделал.",
-        "Сначала то доделай.",
-        "Помню. Иди работай."
+        "You haven't finished yet.",
+        "Finish that first.",
+        "I remember. Go work."
       ],
-
       "exit_early": [
-        "Куда собрался? Я с тобой не закончил.",
-        "Хм. Ушёл — так ушёл.",
-        "Невежа. Больше не приходи."
+        "Where are you going? I'm not done with you.",
+        "Hm. Gone is gone.",
+        "Rude. Don't come back."
       ]
     },
-
-    "торговец": {
+    "merchant": {
       "intro": [
-        "Привет! Хочешь что-то купить?",
-        "Заходи, странник. Товар — первый сорт.",
-        "Чего изволишь? У меня всё есть."
+        "Hello! Want to buy something?",
+        "Come in, wanderer. Goods are first-rate.",
+        "What will it be? I have everything."
       ],
-
       "fail_angry": [
-        "Убирайся, пока стражу не позвал!",
-        "Больше сюда не приходи!",
-        "Ты мне покупателей распугаешь!"
+        "Get out before I call the guards!",
+        "Don't come back here!",
+        "You'll scare off my customers!"
       ],
       "fail": [
-        "Не знаю я ничего.",
-        "Не до тебя. Торгую.",
-        "Проходи, не задерживайся."
+        "I know nothing.",
+        "Not now. I'm trading.",
+        "Move along. Don't linger."
       ],
       "neutral": [
-        "Может, и знаю. Может, нет.",
-        "У меня всё за деньги.",
-        "Сначала купи что-нибудь."
+        "Maybe I know. Maybe not.",
+        "Everything here is for money.",
+        "Buy something first."
       ],
       "success": [
-        "Ладно, слушай.",
-        "Скажу, чего знаю.",
-        "Заходи, поговорим."
+        "Fine, listen.",
+        "I'll tell you what I know.",
+        "Come in, we'll talk."
       ],
       "success_bonus": [
-        "На, держи безделушку. За приятный разговор.",
-        "Слышал я про одно место. Сходи, глянь.",
-        "Есть у меня знакомец. Зайди, скажи от меня."
+        "Here, take a trinket. For a pleasant conversation.",
+        "I heard about a place. Go take a look.",
+        "I know a man. Go see him. Tell him I sent you."
       ],
-
       "trade_fail": [
-        "За так не отдам.",
-        "Цена — как сказал.",
-        "Не торгуюсь. Не базар."
+        "I won't give it away for nothing.",
+        "The price is what I said.",
+        "I don't haggle. This isn't a market."
       ],
       "trade_neutral": [
-        "Ладно, так и быть.",
-        "Бери, только не мни.",
-        "Считай, договорились."
+        "Fine, so be it.",
+        "Take it, just don't crumple it.",
+        "Consider it settled."
       ],
       "trade_success": [
-        "Эх, бери дешевле. С тебя — доброе слово.",
-        "Для тебя — по-божески.",
-        "Ладно, уступлю. Только сегодня."
+        "Eh, take it cheaper. A kind word from you is enough.",
+        "For you — a fair price.",
+        "Fine, I'll give in. Just for today."
       ],
-
       "bribe_fail": [
-        "Не люблю таких.",
-        "Убери, пока не увидели.",
-        "Мне проблем не надо."
+        "I don't like your kind.",
+        "Put that away before someone sees.",
+        "I don't want trouble."
       ],
       "bribe_neutral": [
-        "Маловато.",
-        "Добавь — тогда поговорим.",
-        "Не за так."
+        "Not enough.",
+        "Add more and we'll talk.",
+        "Not for free."
       ],
       "bribe_success": [
-        "Ладно. Слушаю.",
-        "Я тебя не видел.",
-        "Только тихо. У стен уши."
+        "Fine. I'm listening.",
+        "I didn't see you.",
+        "Keep it quiet. Walls have ears."
       ],
-
       "quest_none": [
-        "Нет у меня работы.",
-        "Работы нет. Покупай или уходи.",
-        "Не до тебя."
+        "I have no work.",
+        "No work. Buy or leave.",
+        "Not now."
       ],
       "quest_give": [
-        "Есть одно дело. Слушай.",
-        "Хм. Может, ты и сгодишься.",
-        "Есть. Только не для болтунов."
+        "There is one matter. Listen.",
+        "Hm. Maybe you'll do.",
+        "There is. But not for chatterboxes."
       ],
       "quest_already": [
-        "Ты ещё не сделал.",
-        "Сначала то доделай.",
-        "Помню. Иди работай."
+        "You haven't finished yet.",
+        "Finish that first.",
+        "I remember. Go work."
       ]
     },
-
-    "стражник": {
+    "guard": {
       "intro": [
-        "Я здесь закон!",
-        "Стой. Кто такой?",
-        "Чего надо, проходимец?"
+        "I am the law here!",
+        "Stop. Who are you?",
+        "What do you want, rogue?"
       ],
-
       "fail_angry": [
-        "Ещё шаг — и я тебя повяжу!",
-        "Руки! Руки покажи!",
-        "Ах ты! Меч из ножен!"
+        "One more step and I'll tie you up!",
+        "Hands! Show me your hands!",
+        "Hey you! Sword out of the sheath!"
       ],
       "fail": [
-        "Не знаю. Проходи.",
-        "Не твоё дело.",
-        "Иди своей дорогой."
+        "I don't know. Move along.",
+        "None of your business.",
+        "Go your own way."
       ],
       "neutral": [
-        "Может, и знаю.",
-        "С чего это тебе рассказывать?",
-        "Тут всякое бывает. Не всё для твоих ушей."
+        "Maybe I know.",
+        "Why should I tell you?",
+        "Things happen here. Not everything is for your ears."
       ],
       "success": [
-        "Ладно. Слушай.",
-        "Скажу. Раз спрашиваешь.",
-        "Хм. Ну, слушай."
+        "Fine. Listen.",
+        "I'll tell you. Since you ask.",
+        "Hm. Well, listen."
       ],
       "success_bonus": [
-        "На, держи. За смекалку.",
-        "Скажу тебе больше. Только тихо.",
-        "Есть у меня знакомец. Зайди, скажи от меня."
+        "Here, take this. For your wits.",
+        "I'll tell you more. Just quietly.",
+        "I know a man. Go see him. Tell him I sent you."
       ],
-
       "threat_fail": [
-        "Мне?! Угрожать?!",
-        "Руки за спину, живо!",
-        "Ещё слово — и я тебя в яму."
+        "Me?! Threaten me?!",
+        "Hands behind your back, now!",
+        "One more word and you're in the pit."
       ],
       "threat_neutral": [
-        "Тише ты.",
-        "Не нарывайся.",
-        "Что ты мне сделаешь?"
+        "Easy now.",
+        "Don't push your luck.",
+        "What will you do to me?"
       ],
       "threat_success": [
-        "Ладно, ладно. Без шума.",
-        "Хорошо. Только уйди.",
-        "Договоримся. Не здесь."
+        "Fine, fine. Keep it quiet.",
+        "Alright. Just leave.",
+        "We'll make a deal. Not here."
       ],
-
       "bribe_fail": [
-        "Взяток не беру!",
-        "Ты меня за кого держишь?!",
-        "Спрячь, пока не увидел."
+        "I don't take bribes!",
+        "Who do you take me for?!",
+        "Hide it before I see it."
       ],
       "bribe_neutral": [
-        "Маловато.",
-        "Добавь — тогда поговорим.",
-        "Не за так."
+        "Not enough.",
+        "Add more and we'll talk.",
+        "Not for free."
       ],
       "bribe_success": [
-        "Ладно. Но быстро.",
-        "Я тебя не видел.",
-        "Иди. И не оглядывайся."
+        "Fine. But be quick.",
+        "I didn't see you.",
+        "Go. And don't look back."
       ],
-
       "quest_none": [
-        "Нет у меня работы для тебя.",
-        "Работы нет. Иди.",
-        "Не до тебя."
+        "I have no work for you.",
+        "No work. Go.",
+        "Not now."
       ],
       "quest_give": [
-        "Есть одно дело. Слушай.",
-        "Хм. Есть. Только не для болтунов.",
-        "Есть. Справишься — не забуду."
+        "There is one matter. Listen.",
+        "Hm. There is. But not for chatterboxes.",
+        "There is. Succeed and I won't forget."
       ],
       "quest_already": [
-        "Ты ещё не сделал.",
-        "Сначала то доделай.",
-        "Помню. Иди работай."
+        "You haven't finished yet.",
+        "Finish that first.",
+        "I remember. Go work."
       ]
     },
-
-    "рыбак": {
+    "fisherman": {
       "intro": [
-        "Рыбки не желаете?",
-        "Свежая, только что с реки.",
-        "Чего тебе, странник?"
+        "Care for some fish?",
+        "Fresh, just from the river.",
+        "What do you want, wanderer?"
       ],
-
       "fail_angry": [
-        "Пошёл прочь, пока удочкой не отходил!",
-        "Ты мне рыбу не пугай!",
-        "Убирайся, здесь место занято."
+        "Get lost before I hit you with my rod!",
+        "Don't scare my fish!",
+        "Get out, this spot is taken."
       ],
       "fail": [
-        "Не знаю я ничего.",
-        "Не до тебя, клюёт.",
-        "Проходи, не мешай."
+        "I know nothing.",
+        "Not now, they're biting.",
+        "Move along, don't bother me."
       ],
       "neutral": [
-        "Может, и слышал.",
-        "Тут всякое бывает.",
-        "Скажу, если купишь."
+        "Maybe I heard something.",
+        "Things happen here.",
+        "I'll tell you if you buy."
       ],
       "success": [
-        "Ладно, слушай.",
-        "Скажу, чего знаю.",
-        "Тише только, рыбу спугнёшь."
+        "Fine, listen.",
+        "I'll tell you what I know.",
+        "Just quietly, you'll scare the fish."
       ],
       "success_bonus": [
-        "На, возьми хвостик. За доброе слово.",
-        "Слышал я про омут. Не ходи туда.",
-        "Держи вяленую. В дороге сгодится."
+        "Here, take a little tail. For a kind word.",
+        "I heard about a whirlpool. Don't go there.",
+        "Take some dried fish. It'll serve you on the road."
       ],
-
       "trade_fail": [
-        "За так не отдам.",
-        "Не торгуюсь. Цена — как сказал.",
-        "Хочешь — бери, не хочешь — иди."
+        "I won't give it away for nothing.",
+        "I don't haggle. The price is what I said.",
+        "Take it or leave it."
       ],
       "trade_neutral": [
-        "Ладно, так и быть.",
-        "Бери, только не мни.",
-        "Считай, что договорились."
+        "Fine, so be it.",
+        "Take it, just don't crumple it.",
+        "Consider it settled."
       ],
       "trade_success": [
-        "Эх, бери дешевле. С тебя — доброе слово.",
-        "Для тебя — по-божески.",
-        "Ладно, отдам за полцены."
+        "Eh, take it cheaper. A kind word from you is enough.",
+        "For you — a fair price.",
+        "Fine, I'll give it away for half price."
       ],
-
       "quest_none": [
-        "Нет у меня работы.",
-        "Сам еле концы с концами свожу.",
-        "Ищи другого."
+        "I have no work.",
+        "I can barely make ends meet myself.",
+        "Look for someone else."
       ],
       "quest_give": [
-        "Есть одно дело. Слушай.",
-        "Хм. Может, ты и сгодишься.",
-        "Ну, раз спрашиваешь — есть."
+        "There is one matter. Listen.",
+        "Hm. Maybe you'll do.",
+        "Well, since you ask — there is."
       ],
       "quest_already": [
-        "Уже говорили.",
-        "Ты ещё не сделал.",
-        "Сначала то доделай."
+        "We've already spoken.",
+        "You haven't finished yet.",
+        "Finish that first."
       ]
     },
-
-    "ребёнок": {
+    "child": {
       "intro": [
-        "Дядь, не бей меня!",
-        "Ты кто? Мамка!",
-        "Дядь, а монетка есть?"
+        "Mister, don't hit me!",
+        "Who are you? Mommy!",
+        "Mister, do you have a coin?"
       ],
-
       "fail_angry": [
-        "Ма-а-ам! Чужой дядька!",
-        "Не подходи! Я закричу!",
-        "На, получай! И не догонишь!"
+        "Mo-o-om! A strange man!",
+        "Don't come closer! I'll scream!",
+        "Take that! And you can't catch me!"
       ],
       "fail": [
-        "Не знаю я.",
-        "Мне мамка не велит говорить.",
-        "Отстань."
+        "I don't know.",
+        "Mommy says I shouldn't talk.",
+        "Leave me alone."
       ],
       "neutral": [
-        "Может, и видал.",
-        "А что мне будет?",
-        "Тут всякое бегает."
+        "Maybe I saw.",
+        "What will I get for it?",
+        "All sorts of things run around here."
       ],
       "success": [
-        "Ладно, слушай.",
-        "Только мамке не говори.",
-        "Я видел, я видел!"
+        "Fine, listen.",
+        "Just don't tell mommy.",
+        "I saw it, I saw it!"
       ],
       "success_bonus": [
-        "Дядь, а монетку? Тогда скажу.",
-        "Я знаю одно место. Только тихо.",
-        "У большого дома дыра в заборе. Там всё слышно."
+        "Mister, a coin? Then I'll tell you.",
+        "I know a place. Just quietly.",
+        "There's a hole in the fence by the big house. You can hear everything there."
       ],
-
       "charm_fail": [
-        "Не-е-е, ты страшный!",
-        "Мама говорила, ласковые — самые злые.",
-        "Не подлизывайся, я не маленький!"
+        "No-o-o, you're scary!",
+        "Mommy said the nice ones are the worst.",
+        "Don't try to sweet-talk me, I'm not little!"
       ],
       "charm_neutral": [
-        "Ну-у, ладно.",
-        "А ты не обманешь?",
-        "Скажешь тоже."
+        "We-ell, fine.",
+        "You won't trick me?",
+        "You don't say."
       ],
       "charm_success": [
-        "Дядь, а ты добрый, да?",
-        "Ладно, я тебе скажу.",
-        "Ты хороший. Я знаю."
+        "Mister, you're kind, right?",
+        "Fine, I'll tell you.",
+        "You're good. I know."
       ]
     },
-
-    "ветеран": {
+    "veteran": {
       "intro": [
-        "Много видел. Много знаю. Что надо?",
-        "Садись, странник. Рассказывай.",
-        "Чего надо? Говори прямо."
+        "Seen much. Know much. What do you want?",
+        "Sit down, wanderer. Talk.",
+        "What do you want? Speak plainly."
       ],
-
       "fail_angry": [
-        "Ещё слово — и я тебя научу уму-разуму!",
-        "Мальчишка. Я убивал таких, как ты.",
-        "Уйди, пока я добрый."
+        "One more word and I'll teach you some manners!",
+        "Boy. I've killed ones like you.",
+        "Leave while I'm still kind."
       ],
       "fail": [
-        "Не знаю я ничего.",
-        "Не до тебя. Иди.",
-        "Проходи, не задерживайся."
+        "I know nothing.",
+        "Not now. Go.",
+        "Move along. Don't linger."
       ],
       "neutral": [
-        "Может, и знаю.",
-        "Тут всякое бывает. Много чего видел.",
-        "Сначала скажи, зачем тебе."
+        "Maybe I know.",
+        "Things happen here. I've seen much.",
+        "First tell me why you want to know."
       ],
       "success": [
-        "Ладно, слушай.",
-        "Скажу, чего знаю.",
-        "Хорошо. Слушай внимательно."
+        "Fine, listen.",
+        "I'll tell you what I know.",
+        "Good. Listen carefully."
       ],
       "success_bonus": [
-        "На, держи. В дороге сгодится.",
-        "Скажу тебе больше. Только между нами.",
-        "Есть у меня знакомец. Зайди, скажи от меня."
+        "Here, take this. It'll serve you on the road.",
+        "I'll tell you more. Just between us.",
+        "I know a man. Go see him. Tell him I sent you."
       ],
-
       "threat_fail": [
-        "Мне?! Ха!",
-        "Ещё раз откроешь рот — и я тебя уложу.",
-        "Молод ещё мне угрожать."
+        "Me?! Ha!",
+        "Open your mouth again and I'll put you down.",
+        "You're too young to threaten me."
       ],
       "threat_neutral": [
-        "Тише ты.",
-        "Не нарывайся, щенок.",
-        "Что ты мне сделаешь?"
+        "Easy now.",
+        "Don't push your luck, pup.",
+        "What will you do to me?"
       ],
       "threat_success": [
-        "Ладно, ладно. Без шума.",
-        "Хорошо. Только уйди.",
-        "Договоримся. Не здесь."
+        "Fine, fine. Keep it quiet.",
+        "Alright. Just leave.",
+        "We'll make a deal. Not here."
       ],
-
       "quest_none": [
-        "Нет у меня работы.",
-        "Работы нет. Иди.",
-        "Не до тебя."
+        "I have no work.",
+        "No work. Go.",
+        "Not now."
       ],
       "quest_give": [
-        "Есть одно дело. Слушай.",
-        "Хм. Может, ты и сгодишься.",
-        "Есть. Только не для болтунов."
+        "There is one matter. Listen.",
+        "Hm. Maybe you'll do.",
+        "There is. But not for chatterboxes."
       ],
       "quest_already": [
-        "Ты ещё не сделал.",
-        "Сначала то доделай.",
-        "Помню. Иди работай."
+        "You haven't finished yet.",
+        "Finish that first.",
+        "I remember. Go work."
       ],
-
       "train_offer": [
-        "Хочешь научиться? Смотри и запоминай.",
-        "Ладно. Покажу, как держать. Один раз.",
-        "Хм. Есть в тебе что-то. Иди сюда."
+        "Want to learn? Watch and remember.",
+        "Fine. I'll show you how to hold it. Once.",
+        "Hm. There's something in you. Come here."
       ],
       "train_done": [
-        "Всё, что мог — показал. Дальше сам.",
-        "Больше мне тебя учить нечему.",
-        "Хватит. Остальное — твоя работа."
+        "I've shown you all I could. The rest is on you.",
+        "There's nothing more I can teach you.",
+        "Enough. The rest is your work."
       ],
       "train_used": [
-        "Я тебя уже учил. Помнишь?",
-        "Один раз. Я сказал — один раз.",
-        "Всё. Больше не проси."
+        "I've already taught you. Remember?",
+        "Once. I said — once.",
+        "That's it. Don't ask again."
       ]
     },
-
-    "служитель_церкви": {
+    "cleric": {
       "intro": [
-        "Дитя, уверуй в господа, почувствуй свет внутри!",
-        "Свет да пребудет с тобой, странник.",
-        "Заходи, дитя. Что привело тебя?"
+        "Child, believe in the Lord, feel the light within!",
+        "May the Light be with you, wanderer.",
+        "Come in, child. What brings you here?"
       ],
-
       "fail_angry": [
-        "Прочь, нечестивец! Не оскверняй святого места!",
-        "Изыди! Свет не для таких, как ты!",
-        "Господь видит тебя. Уйди."
+        "Begone, infidel! Do not defile this holy place!",
+        "Depart! The Light is not for ones like you!",
+        "The Lord sees you. Leave."
       ],
       "fail": [
-        "Не знаю я ничего.",
-        "Не до тебя, дитя. Иди с миром.",
-        "Проходи, не задерживайся."
+        "I know nothing.",
+        "Not now, child. Go in peace.",
+        "Move along. Don't linger."
       ],
       "neutral": [
-        "Может, и знаю.",
-        "Тут всякое бывает. Не всё для твоих ушей.",
-        "Сначала скажи, зачем тебе."
+        "Maybe I know.",
+        "Things happen here. Not everything is for your ears.",
+        "First tell me why you want to know."
       ],
       "success": [
-        "Ладно, слушай.",
-        "Скажу, чего знаю. Во имя света.",
-        "Хорошо. Слушай внимательно."
+        "Fine, listen.",
+        "I'll tell you what I know. In the name of the Light.",
+        "Good. Listen carefully."
       ],
       "success_bonus": [
-        "На, возьми. Благословляю тебя в путь.",
-        "Скажу тебе больше. Только между нами.",
-        "Есть у меня человек. Зайди, скажи от меня."
+        "Here, take this. I bless you on your way.",
+        "I'll tell you more. Just between us.",
+        "I know a man. Go see him. Tell him I sent you."
       ],
-
       "quest_none": [
-        "Нет у меня работы для тебя.",
-        "Работы нет. Иди с миром.",
-        "Не до тебя, дитя."
+        "I have no work for you.",
+        "No work. Go in peace.",
+        "Not now, child."
       ],
       "quest_give": [
-        "Есть одно дело. Во имя света.",
-        "Хм. Может, ты и сгодишься.",
-        "Есть. Только не для болтунов."
+        "There is one matter. In the name of the Light.",
+        "Hm. Maybe you'll do.",
+        "There is. But not for chatterboxes."
       ],
       "quest_already": [
-        "Ты ещё не сделал.",
-        "Сначала то доделай.",
-        "Помню. Иди работай."
+        "You haven't finished yet.",
+        "Finish that first.",
+        "I remember. Go work."
       ],
-
       "train_offer": [
-        "Хочешь постичь свет? Тогда слушай.",
-        "Ладно, дитя. Покажу тебе путь.",
-        "Хм. Есть в тебе искра. Иди сюда."
+        "Want to comprehend the Light? Then listen.",
+        "Fine, child. I'll show you the way.",
+        "Hm. There's a spark in you. Come here."
       ],
       "train_done": [
-        "Всё, что мог — показал. Дальше сам.",
-        "Больше мне тебя учить нечему.",
-        "Хватит. Остальное — твоя молитва."
+        "I've shown you all I could. The rest is on you.",
+        "There's nothing more I can teach you.",
+        "Enough. The rest is your prayer."
       ],
       "train_used": [
-        "Я тебя уже учил. Помнишь?",
-        "Один раз. Я сказал — один раз.",
-        "Всё. Больше не проси."
+        "I've already taught you. Remember?",
+        "Once. I said — once.",
+        "That's it. Don't ask again."
       ],
-
       "train_locked": [
-        "Свет не для тебя. Сначала уверуй.",
-        "Ты ещё не готов. Иди, дитя.",
-        "Не время. Может, потом."
+        "The Light is not for you. Believe first.",
+        "You're not ready yet. Go, child.",
+        "Not now. Maybe later."
       ]
     },
-
-    "чернокнижник": {
+    "necromancer": {
       "intro": [
-        "Тьма примет всех, все придут во тьму.",
-        "Заходи, странник. Тьма ждёт.",
-        "Чего надо? Говори тише."
+        "The Dark accepts all, all will come to the Dark.",
+        "Come in, wanderer. The Dark awaits.",
+        "What do you want? Speak quietly."
       ],
-
       "fail_angry": [
-        "Уйди, пока тьма не забрала тебя раньше срока.",
-        "Ты мне мешаешь. Исчезни.",
-        "Ещё слово — и ты не выйдешь отсюда."
+        "Leave before the Dark takes you early.",
+        "You're in my way. Vanish.",
+        "One more word and you won't leave here."
       ],
       "fail": [
-        "Не знаю я ничего.",
-        "Не до тебя. Иди.",
-        "Проходи, не задерживайся."
+        "I know nothing.",
+        "Not now. Go.",
+        "Move along. Don't linger."
       ],
       "neutral": [
-        "Может, и знаю.",
-        "Тут всякое бывает. Не всё для чужих ушей.",
-        "Сначала скажи, зачем тебе."
+        "Maybe I know.",
+        "Things happen here. Not everything is for outsiders' ears.",
+        "First tell me why you want to know."
       ],
       "success": [
-        "Ладно, слушай.",
-        "Скажу, чего знаю. Во имя тьмы.",
-        "Хорошо. Слушай внимательно."
+        "Fine, listen.",
+        "I'll tell you what I know. In the name of the Dark.",
+        "Good. Listen carefully."
       ],
       "success_bonus": [
-        "На, возьми. Тьма щедра к своим.",
-        "Скажу тебе больше. Только между нами.",
-        "Есть у меня человек. Зайди, скажи от меня."
+        "Here, take this. The Dark is generous to its own.",
+        "I'll tell you more. Just between us.",
+        "I know a man. Go see him. Tell him I sent you."
       ],
-
       "trade_fail": [
-        "За так не отдам.",
-        "Цена — как сказал.",
-        "Не торгуюсь. Не базар."
+        "I won't give it away for nothing.",
+        "The price is what I said.",
+        "I don't haggle. This isn't a market."
       ],
       "trade_neutral": [
-        "Ладно, так и быть.",
-        "Бери. Только не тупи.",
-        "Считай, договорились."
+        "Fine, so be it.",
+        "Take it. Just don't dull it.",
+        "Consider it settled."
       ],
       "trade_success": [
-        "Эх, бери дешевле. Тьма любит щедрых.",
-        "Для тебя — по-божески. По-тёмному.",
-        "Ладно, уступлю. Только сегодня."
+        "Eh, take it cheaper. The Dark loves the generous.",
+        "For you — a fair price. In the dark way.",
+        "Fine, I'll give in. Just for today."
       ],
-
       "bribe_fail": [
-        "Мне не нужны твои монеты.",
-        "Убери. Тьма берёт иначе.",
-        "Не за так. Не за деньги."
+        "I don't need your coins.",
+        "Put it away. The Dark takes differently.",
+        "Not for free. Not for money."
       ],
       "bribe_neutral": [
-        "Маловато.",
-        "Добавь — тогда поговорим.",
-        "Не за так."
+        "Not enough.",
+        "Add more and we'll talk.",
+        "Not for free."
       ],
       "bribe_success": [
-        "Ладно. Слушаю.",
-        "Тьма приняла твой дар.",
-        "Только тихо. У стен уши."
+        "Fine. I'm listening.",
+        "The Dark has accepted your gift.",
+        "Keep it quiet. Walls have ears."
       ],
-
       "quest_none": [
-        "Нет у меня работы для тебя.",
-        "Работы нет. Иди.",
-        "Не до тебя."
+        "I have no work for you.",
+        "No work. Go.",
+        "Not now."
       ],
       "quest_give": [
-        "Есть одно дело. Во имя тьмы.",
-        "Хм. Может, ты и сгодишься.",
-        "Есть. Только не для болтунов."
+        "There is one matter. In the name of the Dark.",
+        "Hm. Maybe you'll do.",
+        "There is. But not for chatterboxes."
       ],
       "quest_already": [
-        "Ты ещё не сделал.",
-        "Сначала то доделай.",
-        "Помню. Иди работай."
+        "You haven't finished yet.",
+        "Finish that first.",
+        "I remember. Go work."
       ],
-
       "train_offer": [
-        "Хочешь постичь тьму? Тогда слушай.",
-        "Ладно. Покажу тебе путь.",
-        "Хм. Есть в тебе искра. Иди сюда."
+        "Want to comprehend the Dark? Then listen.",
+        "Fine. I'll show you the way.",
+        "Hm. There's a spark in you. Come here."
       ],
       "train_done": [
-        "Всё, что мог — показал. Дальше сам.",
-        "Больше мне тебя учить нечему.",
-        "Хватит. Остальное — твоя тьма."
+        "I've shown you all I could. The rest is on you.",
+        "There's nothing more I can teach you.",
+        "Enough. The rest is your Dark."
       ],
       "train_used": [
-        "Я тебя уже учил. Помнишь?",
-        "Один раз. Я сказал — один раз.",
-        "Всё. Больше не проси."
+        "I've already taught you. Remember?",
+        "Once. I said — once.",
+        "That's it. Don't ask again."
       ],
-
       "train_locked": [
-        "Тьма не для тебя. Сначала уверуй.",
-        "Ты ещё не готов. Иди.",
-        "Не время. Может, потом."
+        "The Dark is not for you. Believe first.",
+        "You're not ready yet. Go.",
+        "Not now. Maybe later."
       ]
     },
-
-    "трактирщик": {
+    "tavernkeeper": {
       "intro": [
-        "Чего изволишь? Есть еда, выпивка, комната.",
-        "Заходи, странник. С чем пришёл?",
-        "Садись. Чего надо?"
+        "What will it be? There's food, drink, a room.",
+        "Come in, wanderer. What brings you here?",
+        "Sit down. What do you want?"
       ],
-
       "fail_angry": [
-        "Пошёл вон из моей таверны!",
-        "Ещё раз откроешь рот — вышвырну!",
-        "Стража! Уберите его!"
+        "Get out of my tavern!",
+        "Open your mouth again and I'll throw you out!",
+        "Guards! Remove him!"
       ],
       "fail": [
-        "Не знаю я ничего.",
-        "Не до тебя. Народ кормить надо.",
-        "Проходи, не задерживайся."
+        "I know nothing.",
+        "Not now. I have people to feed.",
+        "Move along. Don't linger."
       ],
       "neutral": [
-        "Может, и слышал.",
-        "Тут всякое болтают. Не всё вслух.",
-        "Купи чего — поговорим."
+        "Maybe I heard something.",
+        "People say all sorts of things. Not everything out loud.",
+        "Buy something — then we'll talk."
       ],
       "success": [
-        "Ладно, слушай.",
-        "Скажу, чего знаю.",
-        "Заходи вечером, расскажу."
+        "Fine, listen.",
+        "I'll tell you what I know.",
+        "Come by in the evening, I'll tell you."
       ],
       "success_bonus": [
-        "На, держи кружку. За счёт заведения.",
-        "Слышал я одну вещь. Только между нами.",
-        "Есть у меня комнатка получше. Дам за ту же цену."
+        "Here, take a mug. On the house.",
+        "I heard one thing. Just between us.",
+        "I have a nicer little room. I'll give it for the same price."
       ],
-
       "trade_fail": [
-        "За так не налью.",
-        "Цена — как сказал.",
-        "Не торгуюсь с чужими."
+        "I won't pour for free.",
+        "The price is what I said.",
+        "I don't haggle with strangers."
       ],
       "trade_neutral": [
-        "Ладно, так и быть.",
-        "Бери, только не задерживайся.",
-        "Считай, договорились."
+        "Fine, so be it.",
+        "Take it, just don't linger.",
+        "Consider it settled."
       ],
       "trade_success": [
-        "Эх, бери дешевле. С тебя — доброе слово.",
-        "Для тебя — по-божески.",
-        "Ладно, налью сверху."
+        "Eh, take it cheaper. A kind word from you is enough.",
+        "For you — a fair price.",
+        "Fine, I'll pour you an extra."
       ],
-
       "bribe_fail": [
-        "Не люблю таких.",
-        "Убери, пока не увидели.",
-        "Мне проблем не надо."
+        "I don't like your kind.",
+        "Put that away before someone sees.",
+        "I don't want trouble."
       ],
       "bribe_neutral": [
-        "Маловато.",
-        "Добавь — тогда поговорим.",
-        "Не за так."
+        "Not enough.",
+        "Add more and we'll talk.",
+        "Not for free."
       ],
       "bribe_success": [
-        "Ладно. Слушаю.",
-        "Я тебя не видел.",
-        "Только тихо. У стен уши."
+        "Fine. I'm listening.",
+        "I didn't see you.",
+        "Keep it quiet. Walls have ears."
       ],
-
       "quest_none": [
-        "Нет у меня работы.",
-        "Работы нет. Пей или уходи.",
-        "Не до тебя."
+        "I have no work.",
+        "No work. Drink or leave.",
+        "Not now."
       ],
       "quest_give": [
-        "Есть одно дело. Слушай.",
-        "Хм. Может, ты и сгодишься.",
-        "Есть. Только не для болтунов."
+        "There is one matter. Listen.",
+        "Hm. Maybe you'll do.",
+        "There is. But not for chatterboxes."
       ],
       "quest_already": [
-        "Ты ещё не сделал.",
-        "Сначала то доделай.",
-        "Помню. Иди работай."
+        "You haven't finished yet.",
+        "Finish that first.",
+        "I remember. Go work."
       ]
     }
   },
-
   "events": {
-    "маг_событие": {
+    "mage_event": {
       "intro": [
-        "Ищешь знаний? Или погибели?",
-        "Хм. Ты не похож на других. Заходи.",
-        "А, ещё один искатель. Говори."
+        "Seeking knowledge? Or doom?",
+        "Hm. You're not like the others. Come in.",
+        "Ah, another seeker. Speak."
       ],
-
       "fail_angry": [
-        "Прочь, глупец. Ты не стоишь моего времени.",
-        "Исчезни. Или я сам тебя исчезну.",
-        "Ещё слово — и ты узнаешь, зачем я здесь."
+        "Begone, fool. You're not worth my time.",
+        "Vanish. Or I'll vanish you myself.",
+        "One more word and you'll learn why I'm here."
       ],
       "fail": [
-        "Не знаю я ничего.",
-        "Не до тебя. Иди.",
-        "Проходи, не задерживайся."
+        "I know nothing.",
+        "Not now. Go.",
+        "Move along. Don't linger."
       ],
       "neutral": [
-        "Может, и знаю.",
-        "Тут всякое бывает. Не всё для твоих ушей.",
-        "Сначала скажи, зачем тебе."
+        "Maybe I know.",
+        "Things happen here. Not everything is for your ears.",
+        "First tell me why you want to know."
       ],
       "success": [
-        "Ладно, слушай.",
-        "Скажу, чего знаю.",
-        "Хорошо. Слушай внимательно."
+        "Fine, listen.",
+        "I'll tell you what I know.",
+        "Good. Listen carefully."
       ],
       "success_bonus": [
-        "На, возьми. Пригодится в пути.",
-        "Скажу тебе больше. Только между нами.",
-        "Есть у меня знакомец. Зайди, скажи от меня."
+        "Here, take this. It'll serve you on the road.",
+        "I'll tell you more. Just between us.",
+        "I know a man. Go see him. Tell him I sent you."
       ],
-
       "trade_fail": [
-        "За так не отдам.",
-        "Цена — как сказал. Знания дешевле не станут.",
-        "Не торгуюсь. Не базар."
+        "I won't give it away for nothing.",
+        "The price is what I said. Knowledge doesn't come cheaper.",
+        "I don't haggle. This isn't a market."
       ],
       "trade_neutral": [
-        "Ладно, так и быть.",
-        "Бери. Только не тупи.",
-        "Считай, договорились."
+        "Fine, so be it.",
+        "Take it. Just don't dull it.",
+        "Consider it settled."
       ],
       "trade_success": [
-        "Эх, бери дешевле. Знания любят щедрых.",
-        "Для тебя — по-божески.",
-        "Ладно, уступлю. Только сегодня."
+        "Eh, take it cheaper. Knowledge loves the generous.",
+        "For you — a fair price.",
+        "Fine, I'll give in. Just for today."
       ],
-
       "bribe_fail": [
-        "Мне не нужны твои монеты.",
-        "Убери. Я не за деньги.",
-        "Не за так. Не за деньги."
+        "I don't need your coins.",
+        "Put it away. I'm not for money.",
+        "Not for free. Not for money."
       ],
       "bribe_neutral": [
-        "Маловато.",
-        "Добавь — тогда поговорим.",
-        "Не за так."
+        "Not enough.",
+        "Add more and we'll talk.",
+        "Not for free."
       ],
       "bribe_success": [
-        "Ладно. Слушаю.",
-        "Знания приняли твой дар.",
-        "Только тихо. У стен уши."
+        "Fine. I'm listening.",
+        "Knowledge has accepted your gift.",
+        "Keep it quiet. Walls have ears."
       ],
-
       "train_offer": [
-        "Хочешь постичь? Тогда слушай.",
-        "Ладно. Покажу тебе путь.",
-        "Хм. Есть в тебе искра. Иди сюда."
+        "Want to comprehend? Then listen.",
+        "Fine. I'll show you the way.",
+        "Hm. There's a spark in you. Come here."
       ],
       "train_done": [
-        "Всё, что мог — показал. Дальше сам.",
-        "Больше мне тебя учить нечему.",
-        "Хватит. Остальное — твоя работа."
+        "I've shown you all I could. The rest is on you.",
+        "There's nothing more I can teach you.",
+        "Enough. The rest is your work."
       ],
       "train_locked": [
-        "Не время. Сначала посох, потом учитель.",
-        "Тебе рано. Иди, найди посох.",
-        "Не сейчас. Может, потом."
+        "Not yet. First a staff, then a teacher.",
+        "Too early for you. Go find a staff.",
+        "Not now. Maybe later."
       ]
     },
-
-    "проповедник_событие": {
+    "preacher_event": {
       "intro": [
-        "Возлюби ближнего, странник!",
-        "Остановись, послушай слово божие.",
-        "Мир тебе, путник. Сядь, отдохни."
+        "Love thy neighbor, wanderer!",
+        "Stop, listen to the word of God.",
+        "Peace be with you, traveler. Sit, rest."
       ],
-
       "curse": [
-        "Ты проклят. Господь отвернулся от тебя.",
-        "Тьма на тебе. Я чувствую это.",
-        "Плохой ты человек, странник. Я вижу."
+        "You are cursed. The Lord has turned away from you.",
+        "The Dark is on you. I feel it.",
+        "You're a bad man, wanderer. I can see."
       ],
       "nothing": [
-        "Ступай с миром.",
-        "Ладно. Иди, куда шёл.",
-        "Не буду тебя задерживать."
+        "Go in peace.",
+        "Fine. Go where you were going.",
+        "I won't keep you."
       ],
       "blessing": [
-        "Ты благословлён, странник. Иди с миром.",
-        "Свет на тебе. Я чувствую это.",
-        "Хороший ты человек. Я вижу."
+        "You are blessed, wanderer. Go in peace.",
+        "The Light is on you. I feel it.",
+        "You're a good man. I can see."
       ]
     }
   }

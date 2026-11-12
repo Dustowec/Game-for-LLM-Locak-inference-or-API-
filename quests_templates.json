@@ -2,15 +2,15 @@
   "pala_1": {
     "chain": "pala",
     "step": 1,
-    "title": "инжалы гоблинов",
+    "title": "Daggers of Goblins",
     "type": "deliver",
     "deliver_items": [
       {
-        "name": "кинжал гоблина",
+        "name": "goblin_dagger",
         "count": 20
       },
       {
-        "name": "посох гоблина",
+        "name": "goblin_staff",
         "count": 2
       }
     ],
@@ -22,11 +22,11 @@
   "pala_2": {
     "chain": "pala",
     "step": 2,
-    "title": "осохи шаманов",
+    "title": "Staves of Shamans",
     "type": "deliver",
     "deliver_items": [
       {
-        "name": "посох гоблина-шамана",
+        "name": "goblin_shaman_staff",
         "count": 5
       }
     ],
@@ -38,7 +38,7 @@
   "pala_3": {
     "chain": "pala",
     "step": 3,
-    "title": "спытание света",
+    "title": "Trial of Light",
     "type": "chain",
     "deliver_items": null,
     "required": 3,
@@ -49,7 +49,7 @@
   "heretic_1": {
     "chain": "heretic",
     "step": 1,
-    "title": "лаза тьмы",
+    "title": "Eyes of Darkness",
     "type": "deceive",
     "deliver_items": null,
     "required": 3,
@@ -60,7 +60,7 @@
   "heretic_2": {
     "chain": "heretic",
     "step": 2,
-    "title": "Шёпот в темноте",
+    "title": "Whisper in the Dark",
     "type": "help",
     "deliver_items": null,
     "required": 5,
@@ -71,7 +71,7 @@
   "heretic_3": {
     "chain": "heretic",
     "step": 3,
-    "title": "ечать тьмы",
+    "title": "Seal of Darkness",
     "type": "chain",
     "deliver_items": null,
     "required": 1,

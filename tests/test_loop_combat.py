@@ -7,7 +7,7 @@
 - пишет обратно hidden["combat"] (или очищает при завершении);
 - синхронизирует visible.hp ↔ hidden.hp_raw ↔ combat.burt.hp;
 - подмешивает format_combat_report в events, пока бой идёт;
-- при завершении боя — переключает current_mode, не подмешивает [БОЙ].
+- при завершении боя — переключает current_mode, не подмешивает [COMBAT].
 
 format_sensory_report и его тесты не трогаются.
 """
@@ -53,7 +53,7 @@ def _make_state(combat_dict, *, hp=10, hp_max=10, mp=3, mp_max=3,
         "meta": {"life": 1, "day": 1, "step": 0},
         "visible": {
             "hp": hp, "hp_max": hp_max, "mp": mp, "mp_max": mp_max,
-            "eat": True, "sleep_counter": 0, "date": "1 день",
+            "eat": True, "sleep_counter": 0, "date": "1 day",
             "effects": [],
             "location": {"name": "X", "exits": []},
             "inventory": [],
@@ -187,7 +187,7 @@ class TestBlock:
         result = loop.execute_action(
             loop.Action(key="block", label="Block"), state, _rng_from([5]),
         )
-        assert any("защит" in ev for ev in result.events)
+        assert any("defensive" in ev.lower() or "block" in ev.lower() for ev in result.events)
 
     def test_block_combat_continues(self):
         state, _ = _state_with_one_enemy()
@@ -208,7 +208,7 @@ class TestFlee:
         )
         assert state["hidden"]["combat"] is None
         assert state["hidden"]["current_mode"] == "exploring"
-        assert any("убежал" in ev for ev in result.events)
+        assert any("fled" in ev.lower() or "flee" in ev.lower() for ev in result.events)
 
     def test_flee_fail_keeps_combat(self):
         state, _ = _state_with_one_enemy()
@@ -248,21 +248,21 @@ class TestDeath:
         assert state["hidden"]["combat"] is None
 
 
-# ─── [БОЙ] в events ────────────────────────────────────────
+# ─── [COMBAT] в events ────────────────────────────────────────
 
 class TestCombatReportInEvents:
     def test_ongoing_has_combat_report(self):
         state, e = _state_with_one_enemy()
         result = loop.execute_action(_attack_action(e.id), state, _rng_from([5]))
         joined = "\n".join(result.events)
-        assert "[БОЙ]" in joined
+        assert "[COMBAT]" in joined
 
     def test_finished_no_combat_report(self):
         state, e = _state_with_one_enemy()
         state["hidden"]["combat"]["enemies"][0]["hp"] = 1
         result = loop.execute_action(_attack_action(e.id), state, _rng_from([5]))
         joined = "\n".join(result.events)
-        assert "[БОЙ]" not in joined
+        assert "[COMBAT]" not in joined
 
 
 # ─── синхронизация состояния ───────────────────────────────

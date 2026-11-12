@@ -44,9 +44,9 @@ def test_roles_are_twelve():
 
 def test_roles_contain_expected():
     expected = {
-        "торговец", "стражник", "крестьянин", "староста",
-        "трактирщик", "кузнец", "рыбак", "ребёнок",
-        "ветеран", "служитель_церкви", "чернокнижник", "маг",
+        "merchant", "guard", "peasant", "elder",
+        "tavernkeeper", "blacksmith", "fisherman", "child",
+        "veteran", "cleric", "necromancer", "mage",
     }
     assert set(ROLE_NAMES) == expected
 
@@ -113,7 +113,7 @@ def test_initial_hunger_and_sleep():
 
 def test_initial_date_is_first_day():
     state = _default_state()
-    assert state["visible"]["date"] == "1 день"
+    assert state["visible"]["date"] == "1 day"
 
 
 def test_initial_effects_empty():
@@ -168,7 +168,7 @@ def test_initial_location_graph_has_starting_node():
     assert STARTING_NODE_ID in graph
     node = graph[STARTING_NODE_ID]
     assert set(node.keys()) == {"type", "entered", "exits"}
-    assert node["type"] == "старт"
+    assert node["type"] == "crossroads"
     assert node["entered"] is True
     assert set(node["exits"].keys()) == set(DIRECTIONS)
 
@@ -227,10 +227,10 @@ def test_initial_state_two_calls_are_independent():
     """Две копии не шарят ссылки на вложенные структуры."""
     s1 = _default_state()
     s2 = _default_state()
-    s1["visible"]["inventory"].append({"name": "меч", "count": 1})
+    s1["visible"]["inventory"].append({"name": "sword", "count": 1})
     assert s2["visible"]["inventory"] == []
-    s1["hidden"]["reputation"]["кузнец"] = 5
-    assert s2["hidden"]["reputation"]["кузнец"] == 0
+    s1["hidden"]["reputation"]["blacksmith"] = 5
+    assert s2["hidden"]["reputation"]["blacksmith"] == 0
 
 
 def test_create_initial_state_respects_life_param():
@@ -316,21 +316,21 @@ def test_validate_invalid_state_value():
 
 def test_validate_reputation_above_max():
     state = _default_state()
-    state["hidden"]["reputation"]["кузнец"] = 11
+    state["hidden"]["reputation"]["blacksmith"] = 11
     with pytest.raises(ValueError):
         validate_state(state)
 
 
 def test_validate_reputation_below_min():
     state = _default_state()
-    state["hidden"]["reputation"]["кузнец"] = -11
+    state["hidden"]["reputation"]["blacksmith"] = -11
     with pytest.raises(ValueError):
         validate_state(state)
 
 
 def test_validate_reputation_unknown_role():
     state = _default_state()
-    state["hidden"]["reputation"]["гоблин"] = 0
+    state["hidden"]["reputation"]["goblin"] = 0
     with pytest.raises(ValueError):
         validate_state(state)
 
@@ -350,11 +350,11 @@ def test_validate_spells_invalid_alignment():
 
 
 def test_validate_spells_both_light_and_dark_forbidden():
-    """§9: тьма и свет взаимоисключающие."""
+    """§9: dark и light взаимоисключающие."""
     state = _default_state()
     # Одно заклинание — либо light, либо dark, но не оба.
-    # Так как поле одно — это проверяется тем, что нельзя
-    # одновременно иметь оба. Но по схеме у нас одно поле.
+    # Так как field одно — это проверяется тем, что нельзя
+    # одновременно иметь оба. Но по схеме у нас одно field.
     # Инвариант: element и alignment независимы.
     # Если alignment задан, его значение — из VALID_ALIGNMENTS.
     state["hidden"]["spells"]["alignment"] = "light"
@@ -371,7 +371,7 @@ def test_validate_current_node_must_be_in_graph():
 def test_validate_location_graph_node_has_all_directions():
     state = _default_state()
     state["hidden"]["location_graph"][STARTING_NODE_ID] = {
-        "type": "старт",
+        "type": "crossroads",
         "entered": True,
         "exits": {"north": None},
     }
@@ -466,5 +466,5 @@ def test_get_visible_returns_copy():
 def test_get_hidden_returns_copy():
     state = _default_state()
     h = get_hidden(state)
-    h["reputation"]["кузнец"] = 5
-    assert state["hidden"]["reputation"]["кузнец"] == 0
+    h["reputation"]["blacksmith"] = 5
+    assert state["hidden"]["reputation"]["blacksmith"] == 0

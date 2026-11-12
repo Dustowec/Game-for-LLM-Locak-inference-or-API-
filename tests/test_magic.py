@@ -15,8 +15,8 @@
     - механика «обучение = +1 уровень навыка» (§32, общая)
 
 Модель данных (state.hidden.spells):
-    element:    None | огонь | вода | земля | воздух
-    alignment:  None | свет | тьма
+    element:    None | fire | water | earth | air
+    alignment:  None | light | dark
 """
 import pytest
 
@@ -30,11 +30,11 @@ from burt import magic
 class TestConstants:
     def test_elements(self):
         assert magic.ELEMENTS == frozenset({
-            "огонь", "вода", "земля", "воздух",
+            "fire", "water", "earth", "air",
         })
 
     def test_alignments(self):
-        assert magic.ALIGNMENTS == frozenset({"свет", "тьма"})
+        assert magic.ALIGNMENTS == frozenset({"light", "dark"})
 
     def test_cast_mp_cost(self):
         assert magic.CAST_MP_COST == 1
@@ -58,13 +58,13 @@ class TestConstants:
 # ============================================================
 
 class TestRollMageElement:
-    """§9: «маг — стихия (одна из четырёх), определяется 1d4 при спавне»."""
+    """§9: «mage — стихия (одна из четырёх), определяется 1d4 при спавне»."""
 
     @pytest.mark.parametrize("roll,expected", [
-        (1, "огонь"),
-        (2, "вода"),
-        (3, "земля"),
-        (4, "воздух"),
+        (1, "fire"),
+        (2, "water"),
+        (3, "earth"),
+        (4, "air"),
     ])
     def test_roll_to_element(self, roll, expected):
         rng = lambda: roll
@@ -91,7 +91,7 @@ class TestRollMageElement:
 # ============================================================
 
 class TestCanCast:
-    """§9: каст требует ТРИ условия — посох, заклинание, учитель."""
+    """§9: каст требует ТРИ условия — staff, заклинание, учитель."""
 
     def test_all_three(self):
         assert magic.can_cast(
@@ -127,56 +127,56 @@ class TestCanLearnElement:
     """§9: 1 стихия за жизнь. Повторно не открывается."""
 
     def test_first_element(self):
-        assert magic.can_learn_element(None, "огонь") is True
+        assert magic.can_learn_element(None, "fire") is True
 
     @pytest.mark.parametrize("element", [
-        "огонь", "вода", "земля", "воздух",
+        "fire", "water", "earth", "air",
     ])
     def test_first_element_any(self, element):
         assert magic.can_learn_element(None, element) is True
 
     def test_same_element_again(self):
         # повторно не открывается
-        assert magic.can_learn_element("огонь", "огонь") is False
+        assert magic.can_learn_element("fire", "fire") is False
 
     def test_second_different_element(self):
         # лимит 1 — вторую не даём
-        assert magic.can_learn_element("огонь", "вода") is False
+        assert magic.can_learn_element("fire", "water") is False
 
     def test_unknown_new_element(self):
         # мусорный вход — не падаем, просто False
         assert magic.can_learn_element(None, "хрень") is False
 
     def test_unknown_current_element(self):
-        assert magic.can_learn_element("хрень", "огонь") is False
+        assert magic.can_learn_element("хрень", "fire") is False
 
 
 # ============================================================
-# 5. ОТКРЫТИЕ АЛИГМЕНТА — ТЬМА / СВЕТ ВЗАИМОИСКЛЮЧАЮЩИЕ
+# 5. ОТКРЫТИЕ АЛИГМЕНТА — DARK / LIGHT ВЗАИМОИСКЛЮЧАЮЩИЕ
 # ============================================================
 
 class TestCanLearnAlignment:
-    """§9: 1 из пары тьма/свет. Обе — нельзя."""
+    """§9: 1 из пары dark/light. Обе — нельзя."""
 
     def test_first_alignment_light(self):
-        assert magic.can_learn_alignment(None, "свет") is True
+        assert magic.can_learn_alignment(None, "light") is True
 
     def test_first_alignment_dark(self):
-        assert magic.can_learn_alignment(None, "тьма") is True
+        assert magic.can_learn_alignment(None, "dark") is True
 
     def test_same_alignment_again(self):
-        assert magic.can_learn_alignment("свет", "свет") is False
+        assert magic.can_learn_alignment("light", "light") is False
 
     def test_opposite_alignment(self):
-        # тьма/свет взаимоисключающие
-        assert magic.can_learn_alignment("свет", "тьма") is False
-        assert magic.can_learn_alignment("тьма", "свет") is False
+        # dark/light взаимоисключающие
+        assert magic.can_learn_alignment("light", "dark") is False
+        assert magic.can_learn_alignment("dark", "light") is False
 
     def test_unknown_new_alignment(self):
         assert magic.can_learn_alignment(None, "серость") is False
 
     def test_unknown_current_alignment(self):
-        assert magic.can_learn_alignment("серость", "свет") is False
+        assert magic.can_learn_alignment("серость", "light") is False
 
 
 # ============================================================
@@ -188,13 +188,13 @@ class TestTotalSpells:
         assert magic.total_spells(None, None) == 0
 
     def test_element_only(self):
-        assert magic.total_spells("огонь", None) == 1
+        assert magic.total_spells("fire", None) == 1
 
     def test_alignment_only(self):
-        assert magic.total_spells(None, "свет") == 1
+        assert magic.total_spells(None, "light") == 1
 
     def test_both(self):
-        assert magic.total_spells("огонь", "свет") == 2
+        assert magic.total_spells("fire", "light") == 2
 
 
 # ============================================================
@@ -202,16 +202,16 @@ class TestTotalSpells:
 # ============================================================
 
 class TestTeacherKind:
-    """§9: маг -> стихия, служитель_церкви -> свет, чернокнижник -> тьма."""
+    """§9: mage -> стихия, cleric -> light, necromancer -> dark."""
 
     def test_mage_gives_element(self):
-        assert magic.TEACHER_KIND["маг"] == "element"
+        assert magic.TEACHER_KIND["mage"] == "element"
 
     def test_priest_gives_light(self):
-        assert magic.TEACHER_KIND["служитель_церкви"] == "свет"
+        assert magic.TEACHER_KIND["cleric"] == "light"
 
     def test_warlock_gives_dark(self):
-        assert magic.TEACHER_KIND["чернокнижник"] == "тьма"
+        assert magic.TEACHER_KIND["necromancer"] == "dark"
 
     def test_exactly_three_teachers(self):
         assert len(magic.TEACHER_KIND) == 3

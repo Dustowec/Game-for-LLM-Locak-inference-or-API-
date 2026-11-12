@@ -60,7 +60,7 @@ class TestMovementEventsIntegration:
     def test_roll_5_produces_loot(self):
         """Movement roll=5 -> gold added to wallet, event in results."""
         st = make_state()
-        # north->дорога(safe). rng: [move=5, ec=4, ed=4, et=4, es=4, gold=5]
+        # north->road(safe). rng: [move=5, ec=4, ed=4, et=4, es=4, gold=5]
         rng = _seq_rng([5, 4, 4, 4, 4, 5])
         result = execute_action(Action("go_north", "Go"), st, rng=rng)
         assert isinstance(result, ActionResult)
@@ -70,7 +70,7 @@ class TestMovementEventsIntegration:
     def test_roll_6_produces_blessing(self):
         """Movement roll=6 -> hp/mp restored (capped), event in results."""
         st = make_state()
-        # north->дорога(safe). rng: [move=6, ec=4, ed=4, et=4, es=4, hr=2, mr=1]
+        # north->road(safe). rng: [move=6, ec=4, ed=4, et=4, es=4, hr=2, mr=1]
         rng = _seq_rng([6, 4, 4, 4, 4, 2, 1])
         result = execute_action(Action("go_north", "Go"), st, rng=rng)
         assert isinstance(result, ActionResult)
@@ -83,7 +83,7 @@ class TestMovementEventsIntegration:
     def test_roll_3_or_4_no_positive_event(self):
         """Rolls 3-4: normal movement, no positive event."""
         st = make_state()
-        # north->дорога(safe). rng: [move=3, ec=4, ed=4, et=4, es=4]
+        # north->road(safe). rng: [move=3, ec=4, ed=4, et=4, es=4]
         rng = _seq_rng([3, 4, 4, 4, 4])
         result = execute_action(Action("go_north", "Go"), st, rng=rng)
         assert isinstance(result, ActionResult)
@@ -96,13 +96,13 @@ class TestMovementEventsIntegration:
     def test_roll_5_does_not_apply_if_combat_started(self):
         """On-entry initiated combat -> loot NOT applied (order matters)."""
         st = make_state()
-        # south->лес(dangerous). rng: [move=5, ec=4, ed=4, et=4, es=4, enc=1]
+        # south->forest(dangerous). rng: [move=5, ec=4, ed=4, et=4, es=4, enc=1]
         rng = _seq_rng([5, 4, 4, 4, 4, 1])
         result = execute_action(Action("go_south", "Go"), st, rng=rng)
         assert st["hidden"]["current_mode"] == "combat"
         assert st["hidden"]["combat"] is not None
         assert st["visible"]["wallet"]["gold"] == 0
-        assert any("[БОЙ]" in ev for ev in result.events)
+        assert any("[COMBAT]" in ev for ev in result.events)
         assert not any("You found some gold." in ev for ev in result.events)
 
 class TestResolveMovementEvent:

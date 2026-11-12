@@ -5,10 +5,10 @@ Plain-text, секции в квадратных скобках. Собирае�
 личность квестодателя — не здесь.
 
 Порядок секций фиксирован:
-    [СОСТОЯНИЕ] [МЕСТО] [РУКИ] [КОШЕЛЁК] [НАВЫКИ]
+    [STATE] [LOCATION] [HANDS] [WALLET] [SKILLS]
 
-Пустые секции (РУКИ/КОШЕЛЁК/НАВЫКИ) выводятся со словом "пусто".
-Заголовок [СОСТОЯНИЕ] и [МЕСТО] есть всегда.
+Пустые секции (РУКИ/КОШЕЛЁК/НАВЫКИ) выводятся со словом "empty".
+Заголовок [STATE] и [LOCATION] есть всегда.
 
 Боевой отчёт §23 — отдельная функция format_combat_report.
 Она НЕ трогает format_sensory_report (5 секций) и работает
@@ -29,18 +29,18 @@ __all__ = ["format_sensory_report", "format_combat_report"]
 # ---------------------------------------------------------------------
 
 _DIRECTIONS_RU = {
-    "north": "север",
-    "east": "восток",
-    "south": "юг",
-    "west": "запад",
+    "north": "north",
+    "east": "east",
+    "south": "south",
+    "west": "west",
 }
 
 _EFFECTS_RU = {
-    "blessed": "благословлён",
-    "cursed": "проклят",
+    "blessed": "blessed",
+    "cursed": "cursed",
 }
 
-# §5: на шаге 19 → 20 инжект "ты сильно устал".
+# §5: на шаге 19 → 20 инжект "ты very tired".
 # При SHOW_SLEEP_TIMER=False показываем качественно от этого порога.
 _SLEEP_TIRED_AT = 19
 
@@ -62,16 +62,16 @@ def format_sensory_report(visible: dict) -> str:
 
 
 # ---------------------------------------------------------------------
-# [СОСТОЯНИЕ]
+# [STATE]
 # ---------------------------------------------------------------------
 
 def _format_state(visible: dict) -> str:
-    lines = ["[СОСТОЯНИЕ]"]
+    lines = ["[STATE]"]
     lines.append(_format_hp_mp(visible))
     lines.append(_format_hunger_sleep(visible))
 
     if config.SHOW_DATE:
-        lines.append(f"Дата: {visible['date']}")
+        lines.append(f"Date: {visible['date']}")
 
     effects_line = _format_effects(visible.get("effects") or [])
     if effects_line is not None:
@@ -98,64 +98,64 @@ def _hp_qualitative(hp: int, hp_max: int) -> str:
     # §24: пороги 80% / 50% / 25%. Сравнение целочисленное,
     # без float — чтобы не поймать 79.999... вместо 80.
     if hp * 100 >= hp_max * 80:
-        return "в порядке"
+        return "fine"
     if hp * 100 >= hp_max * 50:
-        return "нормально"
+        return "okay"
     if hp * 100 >= hp_max * 25:
-        return "опасно, мало HP"
-    return "критично"
+        return "dangerous, low HP"
+    return "critical"
 
 
 def _format_hunger_sleep(visible: dict) -> str:
-    hunger = "сыт" if visible["eat"] else "голоден"
+    hunger = "full" if visible["eat"] else "hungry"
 
     if config.SHOW_SLEEP_TIMER:
         sleep = f"{visible['sleep_counter']}/{config.DAY_STEPS}"
     else:
         sc = visible["sleep_counter"]
-        sleep = "устал" if sc >= _SLEEP_TIRED_AT else "бодр"
+        sleep = "tired" if sc >= _SLEEP_TIRED_AT else "fresh"
 
-    return f"Голод: {hunger} | Сон: {sleep}"
+    return f"Hunger: {hunger} | Sleep: {sleep}"
 
 
 def _format_effects(effects: list) -> str | None:
     if not effects:
         return None
     translated = [_EFFECTS_RU.get(e, e) for e in effects]
-    return "Эффекты: " + ", ".join(translated)
+    return "Effects: " + ", ".join(translated)
 
 
 # ---------------------------------------------------------------------
-# [МЕСТО]
+# [LOCATION]
 # ---------------------------------------------------------------------
 
 def _format_location(visible: dict) -> str:
-    lines = ["[МЕСТО]"]
+    lines = ["[LOCATION]"]
     loc = visible["location"]
     lines.append(loc["name"])
 
     exits = loc.get("exits") or []
     if exits:
         ru = [_DIRECTIONS_RU.get(d, d) for d in exits]
-        lines.append("Выходы: " + ", ".join(ru))
+        lines.append("Exits: " + ", ".join(ru))
 
     return "\n".join(lines)
 
 
 # ---------------------------------------------------------------------
-# [РУКИ]
+# [HANDS]
 # ---------------------------------------------------------------------
 
 def _format_inventory(visible: dict) -> str:
-    lines = ["[РУКИ]"]
+    lines = ["[HANDS]"]
     items = visible.get("inventory") or []
 
     if not items:
-        lines.append("пусто")
+        lines.append("empty")
     else:
         for it in items:
             name = _capitalize_first(it["name"])
-            lines.append(f"{name} — {it['count']}шт")
+            lines.append(f"{name} — {it['count']}pcs")
 
     return "\n".join(lines)
 
@@ -167,23 +167,23 @@ def _capitalize_first(s: str) -> str:
 
 
 # ---------------------------------------------------------------------
-# [КОШЕЛЁК]
+# [WALLET]
 # ---------------------------------------------------------------------
 
 def _format_wallet(visible: dict) -> str:
-    lines = ["[КОШЕЛЁК]"]
+    lines = ["[WALLET]"]
     w = visible.get("wallet") or {}
 
     parts = []
     if w.get("gold", 0):
-        parts.append(f"{w['gold']} зол.")
+        parts.append(f"{w['gold']} gold")
     if w.get("silver", 0):
-        parts.append(f"{w['silver']} сер.")
+        parts.append(f"{w['silver']} silver")
     if w.get("copper", 0):
-        parts.append(f"{w['copper']} мед.")
+        parts.append(f"{w['copper']} copper")
 
     if not parts:
-        lines.append("пусто")
+        lines.append("empty")
     else:
         lines.append(", ".join(parts))
 
@@ -191,15 +191,15 @@ def _format_wallet(visible: dict) -> str:
 
 
 # ---------------------------------------------------------------------
-# [НАВЫКИ]
+# [SKILLS]
 # ---------------------------------------------------------------------
 
 def _format_skills(visible: dict) -> str:
-    lines = ["[НАВЫКИ]"]
+    lines = ["[SKILLS]"]
     skills = visible.get("skills_visible") or []
 
     if not skills:
-        lines.append("пусто")
+        lines.append("empty")
     else:
         for s in skills:
             lines.append(f"{s['name']} {s['level']}/{s['max']}")
@@ -208,32 +208,32 @@ def _format_skills(visible: dict) -> str:
 
 
 # ---------------------------------------------------------------------
-# [БОЙ] — §23
+# [COMBAT] — §23
 # ---------------------------------------------------------------------
 
 def format_combat_report(combat: CombatState, burt: BurtStats) -> str:
     """Боевой сенсорный отчёт (§23).
 
     Формат:
-        [БОЙ]
-        Противник: волк_1 (Мёртв), волк_2
-        Твой ход.
+        [COMBAT]
+        Enemy: волк_1 (Dead), волк_2
+        Your turn.
 
-        атаковать волк_2
-        блокировать
-        бежать
+        attack волк_2
+        block
+        flee
 
     Правила:
     - HP врагов НЕ показываем, урон НЕ показываем.
-    - Мёртвых помечаем "(Мёртв)".
+    - Мёртвых помечаем "(Dead)".
     - Раунд и инициативу НЕ выводим (они в hidden).
     - Нумерация (волк_1, волк_2) — если врагов одного типа > 1.
       Одиночный враг или смешанные типы — без суффикса.
     - Меню собирается из реально доступных:
-        атаковать <цель>  — по строке на каждого живого;
-        блокировать      — если есть живые;
-        бежать           — если есть живые и нет no_flee;
-        кастовать        — если burt.spells_available.
+        attack <цель>  — по строке на каждого живого;
+        block      — если есть живые;
+        flee           — если есть живые и нет no_flee;
+        cast        — если burt.spells_available.
     """
     type_counts: dict[str, int] = {}
     for e in combat.enemies:
@@ -247,11 +247,11 @@ def format_combat_report(combat: CombatState, burt: BurtStats) -> str:
             opponents.append(display)
             alive.append((e, display))
         else:
-            opponents.append(f"{display} (Мёртв)")
+            opponents.append(f"{display} (Dead)")
 
-    lines = ["[БОЙ]"]
-    lines.append("Противник: " + ", ".join(opponents))
-    lines.append("Твой ход.")
+    lines = ["[COMBAT]"]
+    lines.append("Enemy: " + ", ".join(opponents))
+    lines.append("Your turn.")
 
     menu = _build_combat_menu_lines(alive, burt)
     if menu:
@@ -268,7 +268,7 @@ def _combat_display_name(
     """Имя врага для отчёта.
 
     Номер (_1, _2) — только если врагов этого типа > 1.
-    Одиночный волк выводится как "волк", не "волк_1".
+    Одиночный wolf выводится как "wolf", не "волк_1".
     """
     name = ENEMIES[enemy.key].name
     if type_counts.get(enemy.key, 1) > 1:
@@ -292,22 +292,22 @@ def _build_combat_menu_lines(
 ) -> list[str]:
     """Собрать строки меню по реально доступным действиям.
 
-    Пусто, если живых врагов нет — тогда и меню нет.
+    Empty, если живых врагов нет — тогда и меню нет.
     """
     if not alive:
         return []
 
     menu: list[str] = []
     for _, display in alive:
-        menu.append(f"атаковать {display}")
+        menu.append(f"attack {display}")
 
-    menu.append("блокировать")
+    menu.append("block")
 
     any_no_flee = any(_is_no_flee(e) for e, _ in alive)
     if not any_no_flee:
-        menu.append("бежать")
+        menu.append("flee")
 
     if burt.spells_available:
-        menu.append("кастовать")
+        menu.append("cast")
 
     return menu

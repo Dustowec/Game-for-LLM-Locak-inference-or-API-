@@ -11,7 +11,7 @@
 
 Решения, зафиксированные с пользователем (11.10.2026):
   В1: спереди=north, сзади=south, слева=west, справа=east
-  В2: "кустарник" — только восточный сосед старта
+  В2: "thicket" — только восточный сосед старта
   В3: node = {type, entered, exits: {north, east, south, west}}
   В4: граф неориентированный (симметрия рёбер)
   В5: тип/описание — при входе, соседи — при входе
@@ -49,17 +49,17 @@ class TestConstants:
         assert world.START_NODE_ID == "start"
 
     def test_location_types_contains_standard(self):
-        for t in ("лес", "поле", "степь", "болото", "река",
-                  "дорога", "деревня"):
+        for t in ("forest", "field", "steppe", "swamp", "river",
+                  "road", "village"):
             assert t in world.LOCATION_TYPES
 
     def test_location_types_contains_rare(self):
-        assert "храм" in world.LOCATION_TYPES
-        assert "подземелье" in world.LOCATION_TYPES
+        assert "temple" in world.LOCATION_TYPES
+        assert "dungeon" in world.LOCATION_TYPES
 
     def test_location_types_contains_special(self):
-        assert "старт" in world.LOCATION_TYPES
-        assert "кустарник" in world.LOCATION_TYPES
+        assert "crossroads" in world.LOCATION_TYPES
+        assert "thicket" in world.LOCATION_TYPES
 
 
 # =====================================================================
@@ -69,35 +69,35 @@ class TestConstants:
 class TestRollLocationType:
 
     def test_roll_1_лес(self):
-        assert world.roll_location_type(1) == "лес"
+        assert world.roll_location_type(1) == "forest"
 
     def test_roll_2_лес(self):
-        assert world.roll_location_type(2) == "лес"
+        assert world.roll_location_type(2) == "forest"
 
     def test_roll_3_поле(self):
-        assert world.roll_location_type(3) == "поле"
+        assert world.roll_location_type(3) == "field"
 
     def test_roll_4_степь(self):
-        assert world.roll_location_type(4) == "степь"
+        assert world.roll_location_type(4) == "steppe"
 
     def test_roll_5_size_1_болото(self):
-        assert world.roll_location_type(5, 1) == "болото"
+        assert world.roll_location_type(5, 1) == "swamp"
 
     def test_roll_5_size_2_река(self):
-        assert world.roll_location_type(5, 2) == "река"
+        assert world.roll_location_type(5, 2) == "river"
 
     def test_roll_5_size_3_дорога(self):
-        assert world.roll_location_type(5, 3) == "дорога"
+        assert world.roll_location_type(5, 3) == "road"
 
     def test_roll_6_size_1_храм(self):
-        assert world.roll_location_type(6, 1) == "храм"
+        assert world.roll_location_type(6, 1) == "temple"
 
     def test_roll_6_size_2_подземелье(self):
-        assert world.roll_location_type(6, 2) == "подземелье"
+        assert world.roll_location_type(6, 2) == "dungeon"
 
     @pytest.mark.parametrize("roll_size", [3, 4, 5, 6])
     def test_roll_6_size_3_to_6_деревня(self, roll_size):
-        assert world.roll_location_type(6, roll_size) == "деревня"
+        assert world.roll_location_type(6, roll_size) == "village"
 
     def test_roll_0_raises(self):
         with pytest.raises(ValueError):
@@ -138,7 +138,7 @@ class TestRollLocationType:
                     t = world.roll_location_type(roll, size)
                 except ValueError:
                     continue
-                assert t != "кустарник"
+                assert t != "thicket"
 
     def test_never_returns_старт(self):
         for roll in range(1, 7):
@@ -147,7 +147,7 @@ class TestRollLocationType:
                     t = world.roll_location_type(roll, size)
                 except ValueError:
                     continue
-                assert t != "старт"
+                assert t != "crossroads"
 
 
 # =====================================================================
@@ -240,9 +240,9 @@ class TestLink:
 
     def _make_graph(self):
         return {
-            "a": _empty_node("лес", entered=True),
-            "b": _empty_node("поле", entered=False),
-            "c": _empty_node("степь", entered=False),
+            "a": _empty_node("forest", entered=True),
+            "b": _empty_node("field", entered=False),
+            "c": _empty_node("steppe", entered=False),
         }
 
     def test_forward_edge_set(self):
@@ -310,7 +310,7 @@ class TestCreateStartGraph:
 
     def test_start_type(self):
         g = world.create_start_graph()
-        assert g[world.START_NODE_ID]["type"] == "старт"
+        assert g[world.START_NODE_ID]["type"] == "crossroads"
 
     def test_start_is_entered(self):
         g = world.create_start_graph()
@@ -325,22 +325,22 @@ class TestCreateStartGraph:
     def test_north_is_дорога(self):
         g = world.create_start_graph()
         nid = g[world.START_NODE_ID]["exits"]["north"]
-        assert g[nid]["type"] == "дорога"
+        assert g[nid]["type"] == "road"
 
     def test_east_is_кустарник(self):
         g = world.create_start_graph()
         nid = g[world.START_NODE_ID]["exits"]["east"]
-        assert g[nid]["type"] == "кустарник"
+        assert g[nid]["type"] == "thicket"
 
     def test_south_is_лес(self):
         g = world.create_start_graph()
         nid = g[world.START_NODE_ID]["exits"]["south"]
-        assert g[nid]["type"] == "лес"
+        assert g[nid]["type"] == "forest"
 
     def test_west_is_река(self):
         g = world.create_start_graph()
         nid = g[world.START_NODE_ID]["exits"]["west"]
-        assert g[nid]["type"] == "река"
+        assert g[nid]["type"] == "river"
 
     def test_neighbors_have_back_edge_to_start(self):
         g = world.create_start_graph()
@@ -395,7 +395,7 @@ class TestEnterNode:
     def test_preserves_preset_type(self):
         g, nid = self._start_and_north()
         world.enter_node(g, nid, roll_count=1, roll_dirs=1)
-        assert g[nid]["type"] == "дорога"
+        assert g[nid]["type"] == "road"
 
     def test_generates_type_if_none(self):
         g = world.create_start_graph()
@@ -403,7 +403,7 @@ class TestEnterNode:
         g["skeleton"] = _empty_node()
         world.enter_node(g, "skeleton", roll_count=1, roll_dirs=1,
                          roll_type=3)
-        assert g["skeleton"]["type"] == "поле"
+        assert g["skeleton"]["type"] == "field"
 
     def test_marks_entered(self):
         g, nid = self._start_and_north()
@@ -484,7 +484,7 @@ class TestEnterNode:
         assert n2 in g
         assert g[n2]["entered"] is False
         world.enter_node(g, n2, roll_count=3, roll_dirs=1, roll_type=3)
-        assert g[n2]["type"] == "поле"
+        assert g[n2]["type"] == "field"
         assert g[n2]["entered"] is True
 
     def test_node_count_grows(self):

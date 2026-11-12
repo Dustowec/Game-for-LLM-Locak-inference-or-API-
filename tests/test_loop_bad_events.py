@@ -29,7 +29,7 @@ def make_state():
         "visible": {
             "hp": 10, "hp_max": 10, "mp": 3, "mp_max": 3,
             "level": 1,
-            "eat": True, "sleep_counter": 5, "date": "1 день",
+            "eat": True, "sleep_counter": 5, "date": "1 day",
             "effects": [],
             "location": {
                 "name": "Crossroads",
@@ -73,7 +73,7 @@ def _mini_graph(node_type, exits_dict):
     """Create a minimal graph with two nodes.
 
     Args:
-        node_type: type string for the source node (e.g. "лес").
+        node_type: type string for the source node (e.g. "forest").
         exits_dict: dict mapping direction -> target_node_id.
 
     Returns:
@@ -200,12 +200,12 @@ class TestHandleMovementFailureBadEvents:
 
     def test_bad_event_ambush_in_loop_starts_combat(self):
         """Movement roll=1 + bad_roll=3 in dangerous location → combat started."""
-        graph = _mini_graph("лес", {"north": "target"})
+        graph = _mini_graph("forest", {"north": "target"})
         st = {
             "visible": {
                 "hp": 10, "hp_max": 10, "mp": 3, "mp_max": 3,
                 "level": 1,
-                "eat": True, "sleep_counter": 5, "date": "1 день",
+                "eat": True, "sleep_counter": 5, "date": "1 day",
                 "effects": [],
                 "location": {"name": "Forest", "exits": ["north"]},
                 "inventory": [],
@@ -232,7 +232,7 @@ class TestHandleMovementFailureBadEvents:
         assert isinstance(result, ActionResult)
         assert st["hidden"]["current_mode"] == "combat"
         assert st["hidden"]["combat"] is not None
-        assert any("[БОЙ]" in ev for ev in result.events)
+        assert any("[COMBAT]" in ev for ev in result.events)
 
     def test_bad_event_does_not_start_combat_if_burt_dead(self):
         """HP=0 after micro+bad event → game_over=True, combat NOT started."""
@@ -254,12 +254,12 @@ class TestHandleMovementFailureBadEvents:
 
     def test_micro_location_preserved_after_bad_combat(self):
         """After ambush combat, micro_location.active=True, source/target intact."""
-        graph = _mini_graph("лес", {"north": "target"})
+        graph = _mini_graph("forest", {"north": "target"})
         st = {
             "visible": {
                 "hp": 10, "hp_max": 10, "mp": 3, "mp_max": 3,
                 "level": 1,
-                "eat": True, "sleep_counter": 5, "date": "1 день",
+                "eat": True, "sleep_counter": 5, "date": "1 day",
                 "effects": [],
                 "location": {"name": "Forest", "exits": ["north"]},
                 "inventory": [],
@@ -308,5 +308,5 @@ class TestHandleMovementFailureBadEvents:
         assert st["visible"]["hp"] == 4
         # Trap description should be in events
         assert any("trap" in ev.lower() for ev in result.events)
-        # [БОЙ] should NOT be in events
-        assert not any("[БОЙ]" in ev for ev in result.events)
+        # [COMBAT] should NOT be in events
+        assert not any("[COMBAT]" in ev for ev in result.events)
