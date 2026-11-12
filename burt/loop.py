@@ -25,7 +25,7 @@ from burt import spawn
 from burt import combat
 from burt.combat import CombatState, BurtStats
 from burt.bestiary import ENEMIES
-from burt.dice import resolve_micro_event, calculate_micro_damage
+from burt.dice import resolve_micro_event, calculate_micro_damage, resolve_movement_event
 
 
 @dataclass
@@ -282,7 +282,8 @@ def execute_action(action: Action, state: dict, rng=None) -> ActionResult:
             return error_result(f"no exit {direction}")
 
         # Movement roll (§10).
-        move_result = dice.resolve_movement(rng()).result
+        move_roll = rng()
+        move_result = dice.resolve_movement(move_roll).result
         if move_result in ("fail_bad", "fail"):
             return _handle_movement_failure(
                 direction, move_result, hidden, visible, rng,
@@ -317,10 +318,41 @@ def execute_action(action: Action, state: dict, rng=None) -> ActionResult:
             loc_type, hidden, visible, rng,
         )
         if combat_report is not None:
+            # Combat started — do NOT apply positive event.
+            # Order: on-entry first, then positive event only if no combat.
             return ActionResult(
                 events=[combat_report],
                 direction_moved=direction,
             )
+
+        # Positive event on great movement (§10, HANDOFF-9.3).
+        # Only applies if on-entry did NOT start combat.
+        if move_roll in (5, 6):
+            ev = resolve_movement_event(
+                move_roll,
+                level=visible.get("level", 1),
+                rng=rng,
+                hp_max=visible.get("hp_max", 10),
+                mp_max=visible.get("mp_max", 3),
+            )
+            if ev.event_type == "loot":
+                visible["wallet"]["gold"] += ev.gold
+            elif ev.event_type == "blessing":
+                current_hp = visible.get("hp", 10)
+                new_hp = min(current_hp + ev.hp_restore, visible.get("hp_max", 10))
+                visible["hp"] = new_hp
+                hidden["hp_raw"] = new_hp
+                current_mp = visible.get("mp", 3)
+                new_mp = min(current_mp + ev.mp_restore, visible.get("mp_max", 3))
+                visible["mp"] = new_mp
+                hidden["mp_raw"] = new_mp
+            if ev.description:
+                events_list = [sensory.format_sensory_report(visible)]
+                events_list.insert(0, ev.description)
+                return ActionResult(
+                    events=events_list,
+                    direction_moved=direction,
+                )
         return ActionResult(
             events=[sensory.format_sensory_report(visible)],
             direction_moved=direction,

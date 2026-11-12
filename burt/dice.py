@@ -361,6 +361,77 @@ def calculate_micro_damage(
 
 
 # ---------------------------------------------------------------------
+# Положительные события при движении — §10 (HANDOFF-9.3)
+# 5 → лут: gold = rng() (1..6)
+# 6 → благословение: hp_restore = rng() (1..3), mp_restore = rng() (1..2)
+# 1–4 → nothing (на случай прямого вызова; в loop вызывается только 5–6)
+# ---------------------------------------------------------------------
+
+_POSITIVE_EVENT_TYPES = ("loot", "blessing", "nothing")
+
+
+@dataclass(frozen=True)
+class MovementEventResult:
+    event_type: str  # "loot" | "blessing" | "nothing"
+    description: str
+    gold: int = 0
+    hp_restore: int = 0
+    mp_restore: int = 0
+
+
+def resolve_movement_event(
+    roll: int,
+    level: int = 1,
+    rng=None,
+    hp_max: int = 10,
+    mp_max: int = 3,
+) -> MovementEventResult:
+    """Resolve a great-movement positive event (§10).
+
+    roll: 1..6 from dice. Only 5–6 produce positive events.
+    level: Burt's current level (unused here, reserved for future).
+    rng: callable returning 1..6. Defaults to dice.roll_d6.
+    hp_max / mp_max: caps for blessing restoration.
+    """
+    _validate_roll(roll)
+    if rng is None:
+        rng = roll_d6
+    if level < 1:
+        level = 1
+    if hp_max < 1:
+        hp_max = 1
+    if mp_max < 1:
+        mp_max = 1
+
+    if roll == 5:
+        gold = rng()  # 1..6
+        return MovementEventResult(
+            event_type="loot",
+            description="You found some gold.",
+            gold=gold,
+        )
+
+    if roll == 6:
+        hp_rest = min(rng(), hp_max)  # 1..3 capped by hp_max
+        mp_rest = min(rng(), mp_max)  # 1..2 capped by mp_max
+        return MovementEventResult(
+            event_type="blessing",
+            description="A blessing restores your vitality.",
+            hp_restore=hp_rest,
+            mp_restore=mp_rest,
+        )
+
+    # rolls 1–4: nothing
+    return MovementEventResult(
+        event_type="nothing",
+        description="",
+        gold=0,
+        hp_restore=0,
+        mp_restore=0,
+    )
+
+
+# ---------------------------------------------------------------------
 # Побег — §23
 # ---------------------------------------------------------------------
 # 1 — провал + враг бьёт бесплатно макс
