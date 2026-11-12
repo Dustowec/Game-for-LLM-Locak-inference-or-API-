@@ -361,6 +361,83 @@ def calculate_micro_damage(
 
 
 # ---------------------------------------------------------------------
+# Плохие события при провале движения (roll=1) — §10 (HANDOFF-9.5)
+# ---------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class BadMovementEventResult:
+    event_type: str        # "trap" | "sprain" | "ambush" | "nothing"
+    description: str       # readable English text
+    extra_damage: int = 0  # added on top of micro-location damage
+    starts_combat: bool = False
+
+
+def resolve_bad_movement_event(
+    roll: int,
+    level: int = 1,
+    rng=None,
+    is_dangerous: bool = False,
+) -> BadMovementEventResult:
+    """Resolve a bad movement event (§10, HANDOFF-9.5).
+
+    roll: 1..6 from dice (separate from movement roll).
+    level: Burt's current level (unused here, reserved for future).
+    rng: callable returning 1..6. Defaults to dice.roll_d6.
+    is_dangerous: whether the current location type is in _ENCOUNTER_LOCATIONS.
+
+    Table:
+      roll 1 → trap:     extra_damage = rng() (1..6),   starts_combat = False
+      roll 2 → sprain:   extra_damage = rng() (1..3),   starts_combat = False
+      roll 3 → ambush:
+          if is_dangerous: starts_combat = True, extra_damage = 0
+          else:            fallback to trap (same as roll 1)
+      roll 4-6 → nothing: zero values, starts_combat = False
+    """
+    _validate_roll(roll)
+    if rng is None:
+        rng = roll_d6
+    if level < 1:
+        level = 1
+
+    if roll == 1:
+        extra = rng()  # 1..6
+        return BadMovementEventResult(
+            event_type="trap",
+            description="You stepped into a trap.",
+            extra_damage=extra,
+        )
+
+    if roll == 2:
+        extra = min(rng(), 3)  # 1..3
+        return BadMovementEventResult(
+            event_type="sprain",
+            description="You twisted your ankle.",
+            extra_damage=extra,
+        )
+
+    if roll == 3:
+        if is_dangerous:
+            return BadMovementEventResult(
+                event_type="ambush",
+                description="You were ambushed!",
+                starts_combat=True,
+            )
+        # Safe location: fallback to trap
+        extra = rng()  # 1..6
+        return BadMovementEventResult(
+            event_type="trap",
+            description="You stepped into a trap.",
+            extra_damage=extra,
+        )
+
+    # rolls 4-6: nothing
+    return BadMovementEventResult(
+        event_type="nothing",
+        description="",
+    )
+
+
+# ---------------------------------------------------------------------
 # Положительные события при движении — §10 (HANDOFF-9.3)
 # 5 → лут: gold = rng() (1..6)
 # 6 → благословение: hp_restore = rng() (1..3), mp_restore = rng() (1..2)

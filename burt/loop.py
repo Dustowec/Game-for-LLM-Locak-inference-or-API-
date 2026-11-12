@@ -25,7 +25,10 @@ from burt import spawn
 from burt import combat
 from burt.combat import CombatState, BurtStats
 from burt.bestiary import ENEMIES
-from burt.dice import resolve_micro_event, calculate_micro_damage, resolve_movement_event
+from burt.dice import (
+    resolve_micro_event, calculate_micro_damage,
+    resolve_movement_event, resolve_bad_movement_event,
+)
 
 
 @dataclass
@@ -625,8 +628,51 @@ def _handle_movement_failure(
     }
 
     if move_result == "fail_bad":
-        # TODO(§10): roll random event, may trigger combat.
-        return ActionResult(events=[event_msg])
+        # §10 (HANDOFF-9.5): roll bad event on fail_bad (movement roll=1).
+        # Roll 2 (fail) does NOT call resolve_bad_movement_event.
+
+        # Determine if current location is dangerous.
+        current_node_data = graph.get(current_node, {})
+        location_type = current_node_data.get("type") or ""
+        is_dangerous = location_type in _ENCOUNTER_LOCATIONS
+
+        # Roll bad event.
+        bad_roll = rng()
+        level = visible.get("level", 1)
+        ev = resolve_bad_movement_event(
+            bad_roll, level=level, rng=rng, is_dangerous=is_dangerous,
+        )
+
+        # Apply extra damage on top of micro-location damage.
+        if ev.extra_damage > 0:
+            new_hp = visible.get("hp", 10) - ev.extra_damage
+            if new_hp < 0:
+                new_hp = 0
+            visible["hp"] = new_hp
+            hidden["hp_raw"] = new_hp
+
+        # Build events list.
+        events_list = [event_msg]
+        if ev.event_type != "nothing":
+            events_list.append(ev.description)
+
+        # Check if Burt is dead before starting combat.
+        if visible.get("hp", 0) <= 0:
+            return ActionResult(events=events_list, game_over=True)
+
+        # Start combat if applicable.
+        if ev.starts_combat:
+            spawn_key = _ENCOUNTER_LOCATIONS.get(location_type)
+            if spawn_key is not None:
+                enemies = spawn.spawn_random(spawn_key, rng(), rng())
+                if enemies:
+                    combat_report = _start_combat(
+                        enemies, "enemy", hidden, visible,
+                    )
+                    events_list.append(combat_report)
+                    return ActionResult(events=events_list)
+
+        return ActionResult(events=events_list)
     return ActionResult(events=[event_msg])
 
 
