@@ -21,6 +21,7 @@ from burt.loop import (
 )
 from burt.combat import start_combat
 from burt.bestiary import ENEMIES
+from burt import world
 
 
 # ─── Helpers ───────────────────────────────────────────────
@@ -321,13 +322,189 @@ class TestTodos:
 
     def test_movement_failure_returns_result_and_increments_step(self):
         st = make_state()
-        result = _handle_movement_failure("north", "fail", st["hidden"])
+        result = _handle_movement_failure(
+            "north", "fail", st["hidden"], st["visible"], lambda: 1,
+        )
         assert isinstance(result, ActionResult)
         assert st["hidden"]["step"] == 1
         assert len(result.events) >= 1
 
     def test_movement_failure_bad_returns_result(self):
         st = make_state()
-        result = _handle_movement_failure("north", "fail_bad", st["hidden"])
+        result = _handle_movement_failure(
+            "north", "fail_bad", st["hidden"], st["visible"], lambda: 1,
+        )
         assert isinstance(result, ActionResult)
         assert st["hidden"]["step"] == 1
+
+
+# ─── TestMicroLocation ─────────────────────────────────────
+
+class TestMicroLocation:
+    """Tests for micro-location on movement failure (§11)."""
+
+    def test_movement_failure_creates_micro_location(self):
+        st = make_state()
+        result = _handle_movement_failure(
+            "north", "fail", st["hidden"], st["visible"], lambda: 1,
+        )
+        micro = st["hidden"].get("micro_location")
+        assert micro is not None
+        assert micro["active"] is True
+        assert micro["source_node"] == "start"
+        assert micro["direction"] == "north"
+
+    def test_movement_failure_applies_damage(self):
+        st = make_state()
+        # stone event (roll=1) -> 1d6, tree (roll=2) -> 2d6, etc.
+        st["visible"]["hp"] = 10
+        result = _handle_movement_failure(
+            "north", "fail", st["hidden"], st["visible"],
+            lambda: 1,  # stone
+        )
+        assert st["visible"]["hp"] < 10  # damage applied
+        assert st["hidden"]["hp_raw"] == st["visible"]["hp"]
+
+    def test_movement_failure_stores_event_type(self):
+        st = make_state()
+        # roll=1 -> stone, roll=2 -> tree, roll=3 -> lightning, roll=4 -> god_wrath
+        for roll, expected in [(1, "stone"), (2, "tree"), (3, "lightning"), (4, "god_wrath")]:
+            st = make_state()
+            _handle_movement_failure(
+                "north", "fail", st["hidden"], st["visible"],
+                lambda r=roll: r,
+            )
+            assert st["hidden"]["micro_location"]["event_type"] == expected
+
+    def test_movement_failure_stores_target_node(self):
+        st = make_state()
+        north_id = _start_node_exits(st)["north"]
+        _handle_movement_failure(
+            "north", "fail", st["hidden"], st["visible"], lambda: 1,
+        )
+        assert st["hidden"]["micro_location"]["target_node"] == north_id
+
+    def test_go_back_returns_to_source(self):
+        st = make_state()
+        _handle_movement_failure(
+            "north", "fail", st["hidden"], st["visible"], lambda: 1,
+        )
+        north_id = _start_node_exits(st)["north"]
+        execute_action(Action("go_back", "Back"), st, rng=lambda: 1)
+        assert st["hidden"]["current_node_id"] == "start"
+        assert st["hidden"]["micro_location"]["active"] is False
+
+    def test_go_back_increments_step(self):
+        st = make_state()
+        _handle_movement_failure(
+            "north", "fail", st["hidden"], st["visible"], lambda: 1,
+        )
+        step_before = st["hidden"]["step"]
+        execute_action(Action("go_back", "Back"), st, rng=lambda: 1)
+        assert st["hidden"]["step"] == step_before + 1
+
+    def test_go_forward_moves_to_target(self):
+        st = make_state()
+        north_id = _start_node_exits(st)["north"]
+        # Pre-generate the north node so forward works
+        graph = st["hidden"]["location_graph"]
+        if not graph[north_id].get("entered", False):
+            world.enter_node(graph, north_id, 4, 4, 4, 4)
+        _handle_movement_failure(
+            "north", "fail", st["hidden"], st["visible"], lambda: 1,
+        )
+        execute_action(Action("go_forward", "Forward"), st, rng=lambda: 1)
+        assert st["hidden"]["current_node_id"] == north_id
+        assert st["hidden"]["micro_location"]["active"] is False
+
+    def test_go_forward_increments_step(self):
+        st = make_state()
+        north_id = _start_node_exits(st)["north"]
+        graph = st["hidden"]["location_graph"]
+        if not graph[north_id].get("entered", False):
+            world.enter_node(graph, north_id, 4, 4, 4, 4)
+        _handle_movement_failure(
+            "north", "fail", st["hidden"], st["visible"], lambda: 1,
+        )
+        step_before = st["hidden"]["step"]
+        execute_action(Action("go_forward", "Forward"), st, rng=lambda: 1)
+        assert st["hidden"]["step"] == step_before + 1
+
+    def test_build_menu_shows_micro_exits(self):
+        st = make_state()
+        _handle_movement_failure(
+            "north", "fail", st["hidden"], st["visible"], lambda: 1,
+        )
+        actions = build_menu(st["visible"], st)
+        keys = [a.key for a in actions]
+        assert "go_back" in keys
+        assert "go_forward" in keys
+        assert "osmotret" not in keys
+        assert len([k for k in keys if k.startswith("go_")]) == 2
+
+    def test_go_back_without_micro_location_returns_error(self):
+        st = make_state()
+        result = execute_action(
+            Action("go_back", "Back"), st, rng=lambda: 1,
+        )
+        assert len(result.events) >= 1
+        assert "micro" in result.events[0].lower()
+
+    def test_go_forward_without_micro_location_returns_error(self):
+        st = make_state()
+        result = execute_action(
+            Action("go_forward", "Forward"), st, rng=lambda: 1,
+        )
+        assert len(result.events) >= 1
+        assert "micro" in result.events[0].lower()
+
+    def test_go_back_updates_location_name(self):
+        st = make_state()
+        _handle_movement_failure(
+            "north", "fail", st["hidden"], st["visible"], lambda: 1,
+        )
+        execute_action(Action("go_back", "Back"), st, rng=lambda: 1)
+        # Should be back at start node name
+        assert st["visible"]["location"]["name"] == "Crossroads"
+
+    def test_movement_failure_event_in_result(self):
+        st = make_state()
+        result = _handle_movement_failure(
+            "north", "fail", st["hidden"], st["visible"], lambda: 1,
+        )
+        # Event message should contain direction and event type
+        assert len(result.events) >= 1
+        assert "north" in result.events[0]
+        assert "stone" in result.events[0]
+
+    def test_god_wrath_damage_uses_level(self):
+        from burt.dice import resolve_micro_event, calculate_micro_damage
+        # roll=4 -> god_wrath, level=5 -> damage=5
+        event = resolve_micro_event(4, level=5)
+        assert event.event_type == "god_wrath"
+        damage = calculate_micro_damage(event, lambda: 0)  # dice_count=0
+        assert damage == 5
+
+    def test_stone_damage_1d6(self):
+        from burt.dice import resolve_micro_event, calculate_micro_damage
+        event = resolve_micro_event(1, level=1)
+        assert event.event_type == "stone"
+        assert event.dice_count == 1
+        damage = calculate_micro_damage(event, lambda: 4)
+        assert damage == 4
+
+    def test_tree_damage_2d6(self):
+        from burt.dice import resolve_micro_event, calculate_micro_damage
+        event = resolve_micro_event(2, level=1)
+        assert event.event_type == "tree"
+        assert event.dice_count == 2
+        damage = calculate_micro_damage(event, lambda: 3)
+        assert damage == 6  # 3+3
+
+    def test_lightning_damage_3d6(self):
+        from burt.dice import resolve_micro_event, calculate_micro_damage
+        event = resolve_micro_event(3, level=1)
+        assert event.event_type == "lightning"
+        assert event.dice_count == 3
+        damage = calculate_micro_damage(event, lambda: 2)
+        assert damage == 6  # 2+2+2
