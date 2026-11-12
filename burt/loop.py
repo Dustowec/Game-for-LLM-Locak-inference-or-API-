@@ -25,6 +25,7 @@ from burt import spawn
 from burt import combat
 from burt.combat import CombatState, BurtStats
 from burt.bestiary import ENEMIES
+from burt.dice import resolve_micro_event, calculate_micro_damage
 
 
 @dataclass
@@ -89,6 +90,14 @@ def build_menu(visible: dict, state: dict) -> list[Action]:
 
     if mode == "dialog":
         return [Action(key="exit_dialog", label="Exit dialogue")]
+
+    # ── Micro-location exits (§11) ──────────────────────────
+    micro = hidden.get("micro_location")
+    if micro and micro.get("active"):
+        actions: list[Action] = []
+        actions.append(Action(key="go_back", label="Go back"))
+        actions.append(Action(key="go_forward", label="Go forward"))
+        return actions
 
     actions: list[Action] = []
     # TODO(O4): Burt attacks first (initiates combat from exploring).
@@ -193,6 +202,69 @@ def execute_action(action: Action, state: dict, rng=None) -> ActionResult:
         osm_str = chr(0x43E)+chr(0x441)+chr(0x43C)+chr(0x43E)+chr(0x442)+chr(0x440)
         return ActionResult(events=[osm_str, report])
 
+    # ── Micro-location exits (§11) ──────────────────────────
+    # Must be BEFORE the generic go_ handler below.
+
+    if action.key == "go_back":
+        micro = hidden.get("micro_location")
+        if micro is None or not micro.get("active"):
+            return error_result("no active micro-location")
+        source = micro["source_node"]
+        graph = hidden.get("location_graph", {})
+        if source not in graph:
+            return error_result(f"source node {source!r} missing")
+        hidden["current_node_id"] = source
+        hidden["micro_location"] = {"active": False}
+        node = graph[source]
+        visible["location"]["name"] = _resolve_location_name(
+            node.get("type", ""), source,
+        )
+        if "exits" in node:
+            visible["location"]["exits"] = [
+                d for d, t in node["exits"].items() if t
+            ]
+        hidden["step"] = hidden.get("step", 0) + 1
+        hidden["day"] = hidden.get("day", 1)
+        visible["date"] = f"{hidden['day']} day(s)"
+        return ActionResult(
+            events=[
+                f"Возврат на {source}.",
+                sensory.format_sensory_report(visible),
+            ],
+        )
+
+    if action.key == "go_forward":
+        micro = hidden.get("micro_location")
+        if micro is None or not micro.get("active"):
+            return error_result("no active micro-location")
+        target = micro["target_node"]
+        if target is None:
+            return error_result("no target node for micro-location")
+        graph = hidden.get("location_graph", {})
+        if target not in graph:
+            return error_result(f"target node {target!r} missing")
+        hidden["current_node_id"] = target
+        hidden["micro_location"] = {"active": False}
+        node = graph[target]
+        loc_type = node.get("type", "")
+        visible["location"]["name"] = _resolve_location_name(
+            loc_type, target,
+        )
+        if "exits" in node:
+            visible["location"]["exits"] = [
+                d for d, t in node["exits"].items() if t
+            ]
+        hidden["step"] = hidden.get("step", 0) + 1
+        # On-entry encounter roll (O1).
+        combat_report = _maybe_start_combat_on_enter(
+            loc_type, hidden, visible, rng,
+        )
+        if combat_report is not None:
+            return ActionResult(events=[combat_report])
+        return ActionResult(
+            events=[sensory.format_sensory_report(visible)],
+        )
+
     if action.key.startswith("go_"):
         direction = action.key[3:]
         if direction not in DIRECTIONS:
@@ -213,7 +285,7 @@ def execute_action(action: Action, state: dict, rng=None) -> ActionResult:
         move_result = dice.resolve_movement(rng()).result
         if move_result in ("fail_bad", "fail"):
             return _handle_movement_failure(
-                direction, move_result, hidden,
+                direction, move_result, hidden, visible, rng,
             )
 
         # Move to target node.
@@ -256,12 +328,8 @@ def execute_action(action: Action, state: dict, rng=None) -> ActionResult:
 
     if action.key == "search":
         hidden["step"] = hidden.get("step", 0) + 1
-        current = hidden.get("current_node_id", "start")
-        loc_type = hidden.get("location_types", {}).get(current, "")
-        location_key = loc_type if loc_type in spawn._ENCOUNTER_TABLE else "forest"
-        roll = dice.roll_d6()
+        roll = rng()
         search_result = dice.resolve_search(roll)
-        hidden["step"] = hidden.get("step", 0) + 1
         return ActionResult(
             events=[search_result.result, sensory.format_sensory_report(visible)],
             search_result=search_result.result,
@@ -462,19 +530,72 @@ def _handle_movement_failure(
     direction: str,
     move_result: str,
     hidden: dict,
+    visible: dict,
+    rng,
 ) -> ActionResult:
-    """Movement failure (§11).
+    """Movement failure (§11) — micro-location with 2 exits.
 
-    TODO(§11): micro-location with 2 exits (back/forward).
-    Simplified: Burt stays in place.
+    Burt enters a micro-location between source and target nodes.
+    Two guaranteed exits: back (return to source) and forward
+    (try again to reach target).
+
+    Negative event: tripped / lost.
+    Damage tied to event:
+      stone 1d6, tree 2d6, lightning 3d6, god's wrath 1×lvl.
     """
     hidden["step"] = hidden.get("step", 0) + 1
+
+    current_node = hidden.get("current_node_id", "start")
+    graph = hidden.get("location_graph", {})
+    current_node_data = graph.get(current_node, {})
+    next_id = None
+    if "exits" in current_node_data:
+        next_id = current_node_data["exits"].get(direction)
+    else:
+        next_id = current_node_data.get(direction)
+
+    # Roll micro-event type.
+    event_roll = rng()
+    level = visible.get("level", 1)
+    micro_event = resolve_micro_event(event_roll, level)
+
+    # Calculate damage.
+    damage = calculate_micro_damage(micro_event, rng)
+
+    # Apply damage to HP.
+    new_hp = visible.get("hp", 10) - damage
+    if new_hp < 0:
+        new_hp = 0
+    visible["hp"] = new_hp
+    hidden["hp_raw"] = new_hp
+
+    # Build event description.
+    if damage > 0:
+        event_msg = (
+            f"Не удалось пройти {direction}. "
+            f"Микро-событие: {micro_event.event_type}. "
+            f"Получено {damage} урона."
+        )
+    else:
+        event_msg = (
+            f"Не удалось пройти {direction}. "
+            f"Микро-событие: {micro_event.event_type}."
+        )
+
+    # Store micro-location state.
+    hidden["micro_location"] = {
+        "active": True,
+        "source_node": current_node,
+        "target_node": next_id,
+        "direction": direction,
+        "event_type": micro_event.event_type,
+        "damage": damage,
+    }
+
     if move_result == "fail_bad":
         # TODO(§10): roll random event, may trigger combat.
-        return ActionResult(
-            events=[f"Не удалось пройти {direction}. Плохое событие."]
-        )
-    return ActionResult(events=[f"Не удалось пройти {direction}."])
+        return ActionResult(events=[event_msg])
+    return ActionResult(events=[event_msg])
 
 
 def _resolve_location_name(loc_type: str, node_id: str) -> str:

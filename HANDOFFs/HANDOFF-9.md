@@ -68,28 +68,32 @@ What was achieved:
        the single source of mode (VALID_STATES still enforced)
      - validate_state updated for new graph shape and current_mode
 
-  2. loop.py: combat start (O1/O2/O3):
-     - _start_combat(enemy_keys, initiative, hidden, visible) -> str
-       * combat.start_combat -> hidden["combat"]
-       * hidden["current_mode"] = "combat"
-       * returns sensory.format_combat_report(...)
-     - _maybe_start_combat_on_enter(location_type, hidden, visible, rng)
-       * кустарник -> spawn.spawn_ambush, initiative="enemy"
-       * dangerous (лес/поле/степь/болото/подземелье):
-           roll 1-2 -> spawn.spawn_random, initiative="enemy"
-           roll 3-6 -> quiet (None)
-       * safe (река/дорога/деревня/храм/старт) -> None
-     - _enter_new_node(graph, node_id, rng)
-       * calls world.enter_node with normalized rolls
-       * normalizes roll_size for roll_type=5 (1..3)
-     - _handle_movement_failure(direction, move_result, hidden)
-       * increments step, returns ActionResult
-       * simplified: Burt stays in place (TODO §11)
-     - go_ handler in execute_action:
-       * movement roll via dice.resolve_movement (§10)
-       * roll 1-2 -> _handle_movement_failure
-       * roll 3-6 -> move, generate new node, on-entry roll
-       * on entry into combat -> returns [БОЙ] report in events
+   2. loop.py: combat start (O1/O2/O3):
+      - _start_combat(enemy_keys, initiative, hidden, visible) -> str
+        * combat.start_combat -> hidden["combat"]
+        * hidden["current_mode"] = "combat"
+        * returns sensory.format_combat_report(...)
+      - _maybe_start_combat_on_enter(location_type, hidden, visible, rng)
+        * кустарник -> spawn.spawn_ambush, initiative="enemy"
+        * dangerous (лес/поле/степь/болото/подземелье):
+            roll 1-2 -> spawn.spawn_random, initiative="enemy"
+            roll 3-6 -> quiet (None)
+        * safe (река/дорога/деревня/храм/старт) -> None
+      - _enter_new_node(graph, node_id, rng)
+        * calls world.enter_node with normalized rolls
+        * normalizes roll_size for roll_type=5 (1..3)
+      - _handle_movement_failure(direction, move_result, hidden, visible, rng)
+        * §11: creates micro-location with source/target/direction
+        * rolls micro-event (stone/tree/lightning/god_wrath)
+        * applies damage: stone 1d6, tree 2d6, lightning 3d6, god_wrath 1×lvl
+        * stores micro_location in hidden state
+      - go_ handler in execute_action:
+        * movement roll via dice.resolve_movement (§10)
+        * roll 1-2 -> _handle_movement_failure (micro-location)
+        * roll 3-6 -> move, generate new node, on-entry roll
+        * on entry into combat -> returns [БОЙ] report in events
+      - go_back handler (§11): returns to source node, clears micro_location
+      - go_forward handler (§11): moves to target node, on-entry encounter
 
   3. Menu in exploring: TODO(O4) comment added.
      Burt does NOT have attack_* in exploring menu (deferred).
@@ -108,25 +112,30 @@ Tests: 1286 -> 1314 (+28)
   - test_integration.py: make_state rewritten + 1 test
 
 What DOES NOT work yet (explicit TODOs in code):
+  - §11: micro-location on movement failure -> COMPLETED (12.11.2026)
+    * Micro-location created on movement failure with 2 exits (back/forward)
+    * Damage applied: stone 1d6, tree 2d6, lightning 3d6, god's wrath 1×lvl
   - O4: Burt attacks first (initiate combat from exploring).
-    Deferred until npc.py: no enemy sources in exploring yet.
-  - §11: micro-location on movement failure.
-    Simplified: Burt stays in place.
+      Deferred until npc.py: no enemy sources in exploring yet.
   - §10: positive events on movement/entry roll 5-6.
     Not implemented (loot, blessing, etc.).
   - §10: bad event on movement fail roll 1.
     Deferred except combat case.
 
 Known issues found during this session (TODO for later):
-  1. STARTING_LOCATION_NAME = "Развилка" (state.py) vs
-     _LOCATION_NAMES["старт"] = "Crossroads" (loop.py).
-     On return to start, name flips to "Crossroads".
-  2. hidden["step"] += 1 at combat start - violates §3
-     (combat freezes day counter, ticks after combat ends).
-     Needs general step-counter task.
-  3. test_validate_spells_both_light_and_dark_forbidden in
-     test_state.py does not actually test anything
-     (single alignment field). Leave as-is.
+   1. STARTING_LOCATION_NAME = "Развилка" (state.py) vs
+      _LOCATION_NAMES["старт"] = "Crossroads" (loop.py).
+      On return to start, name flips to "Crossroads".
+   2. test_validate_spells_both_light_and_dark_forbidden in
+      test_state.py does not actually test anything
+      (single alignment field). Leave as-is.
+
+Fixed (HANDOFF-9.2, 12.11.2026):
+   - double `step += 1` in `search` — removed, now exactly one increment
+     per search call.
+   - `search` referenced removed `hidden["location_types"]`; search now
+     always uses the forest table.
+   - Note: `hidden["location_types"]` no longer exists in `state.py`.
 
 ---------------------------------------------------------------------
 KNOWN BUGS (from earlier handoffs, still active)
@@ -171,61 +180,66 @@ PENDING FROM EARLIER HANDOFFS
 
 ---------------------------------------------------------------------
 FUTURE PRIORITIES
----------------------------------------------------------------------
 
-1. Micro-location on movement failure (§11)
-   - 2 guaranteed exits: back (to source) and forward (to target)
-   - Damage tied to event: stone 1d6, tree 2d6, lightning 3d6,
-     god's wrath 1*lvl
-   - Currently simplified to "Burt stays in place"
-   - Estimated: ~60 lines in loop.py, ~15 tests
+1. Random events on roll 5-6 (§10)
+    - Movement "great": positive event (loot, blessing)
+    - Movement "fail_bad": bad event (may trigger combat)
+    - Currently only combat branch implemented for fail_bad
+    - Estimated: ~40 lines, ~12 tests
 
-2. Random events on roll 5-6 (§10)
-   - Movement "great": positive event (loot, blessing)
-   - Movement "fail_bad": bad event (may trigger combat)
-   - Currently only combat branch implemented for fail_bad
-   - Estimated: ~40 lines, ~12 tests
+2. Combat debts (each small)
+    - [Tools] in combat menu
+    - Real BurtStats (weapon + skill integration)
+    - cast action in combat
 
-3. Combat debts (each small)
-   - [Tools] in combat menu
-   - Real BurtStats (weapon + skill integration)
-   - cast action in combat
+3. npc.py - dialogue system
+    - Uses replicas.json (already loaded via burt.replicas)
+    - Integrates with quests.py (quest_give, quest_progress)
+    - DEFERRED by user - do not start without approval
+    - Estimated: ~300 lines, ~40 tests
 
-4. npc.py - dialogue system
-   - Uses replicas.json (already loaded via burt.replicas)
-   - Integrates with quests.py (quest_give, quest_progress)
-   - DEFERRED by user - do not start without approval
-   - Estimated: ~300 lines, ~40 tests
+4. I/O layer (memory, diary, quest_io, logging_async)
+     - memory.py: §28, memory.json, summarization at 10+
+     - diary.py: §29, diary.json, summarization every 5 days
+     - quest_io.py: read/write quests.json (currently in state dict only)
+     - logging_async.py: §38, §39
+     - Estimated: memory ~120L/15T, diary ~120L/15T, quest_io ~100L/10T,
+       logging ~100L/10T
 
-5. I/O layer (memory, diary, quest_io, logging_async)
-   - memory.py: §28, memory.json, summarization at 10+
-   - diary.py: §29, diary.json, summarization every 5 days
-   - quest_io.py: read/write quests.json (currently in state dict only)
-   - logging_async.py: §38, §39
-   - Estimated: memory ~120L/15T, diary ~120L/15T, quest_io ~100L/10T,
-     logging ~100L/10T
+5. Finalize Pravila.md
 
-6. General step counter task (§3)
-   - Combat freezes day counter, ticks after combat
-   - Currently increments at combat start (bug #2 above)
+§11 micro-location: COMPLETED (12.11.2026)
+     - _handle_movement_failure creates micro-location with source/target
+     - go_back: returns to source node
+     - go_forward: moves to target node with on-entry encounter
+     - Damage events: stone 1d6, tree 2d6, lightning 3d6, god_wrath 1×lvl
+     - 17 new tests added
 
-7. Finalize Pravila.md
+Search fixes (HANDOFF-9.2, 12.11.2026): COMPLETED
+      - double `step += 1` in `search` removed
+      - `search` no longer references `hidden["location_types"]`
+      - always uses forest table directly
+      - search uses rng() instead of dice.roll_d6() (deterministic)
+      - 4 new tests added
 
 ---------------------------------------------------------------------
 QUICK START COMMANDS FOR NEXT SESSION
 ---------------------------------------------------------------------
 
   cd E:\Butr-Ai
-  .\.venv\Scripts\pytest.exe tests/ -q          # verify 1314 pass
-  .\.venv\Scripts\pytest.exe tests/test_loop_combat_start.py -v # 28
-  .\.venv\Scripts\pytest.exe tests/test_loop.py -v             # 37
-  .\.venv\Scripts\pytest.exe tests/test_state.py -v            # ~60
-  .\.venv\Scripts\pytest.exe tests/test_state_io.py -v         # ~30
+   .\.venv\Scripts\pytest.exe tests/ -q          # verify 1335 pass
+   .\.venv\Scripts\pytest.exe tests/test_loop_combat_start.py -v # 45
+   .\.venv\Scripts\pytest.exe tests/test_loop.py -v             # 37
+   .\.venv\Scripts\pytest.exe tests/test_state.py -v            # ~60
+   .\.venv\Scripts\pytest.exe tests/test_state_io.py -v         # ~30
+   .\.venv\Scripts\pytest.exe tests/test_loop_search_fix.py -v  # 4
 
 MEMORY AID:
   - loop.execute_action(action, state, rng=None)
     * go_ now: movement roll (§10) -> on-entry encounter (§23)
-    * roll 1-2 on movement -> Burt stays in place (TODO §11)
+    * roll 1-2 on movement -> micro-location (§11) with 2 exits
+    * go_back -> returns to source node
+    * go_forward -> moves to target node with on-entry encounter
     * on-entry into dangerous: 1-2 attack, 3-6 quiet
     * кустарник -> always ambush, initiative="enemy"
     * combat mode -> hidden["combat"] (dict) -> CombatState.from_dict
@@ -241,6 +255,10 @@ MEMORY AID:
     * HP/damage NOT shown
     * dead marked (Myortv)
     * menu: atakovat/blokirovat/bezhat/kastovat
+  - dice.resolve_micro_event(roll, level) -> MicroEventResult
+    * roll=1 -> stone (1d6), roll=2 -> tree (2d6)
+    * roll=3 -> lightning (3d6), roll=4 -> god_wrath (1×lvl)
+  - dice.calculate_micro_damage(micro_event, rng) -> int
   - BurtStats has DEFAULTS for damage/master/modifier
   - hidden["enemies"] is DEAD - use hidden["combat"]
   - visible["state"] is DEAD - use hidden["current_mode"]
@@ -249,9 +267,14 @@ MEMORY AID:
   - Player name in Russian: "Бурт" (not "Бёрт")
   - Git is CLEAN - commit before big changes, always.
 
-TEST COUNTER: 1314 passed.
-  Last verified: 07.11.2026
+TEST COUNTER: 1335 passed.
+  Last verified: 12.11.2026
+  Added: 17 micro-location tests (HANDOFF-9.1) + 4 search fix tests (HANDOFF-9.2)
 
 =====================================================================
 END OF HANDOFF 9.
 =====================================================================
+found later:
+The double `step += 1` in `search` is a genuine bug—it’s just one line of code.
+hidden["location_types"]` no longer exists in the new `state.py`; searches are now always performed against the forest table.
+Point 2 (“step at the start of combat”) is incorrect; remove it.

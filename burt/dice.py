@@ -302,6 +302,65 @@ def resolve_random_event(roll: int) -> RandomEventResult:
 
 
 # ---------------------------------------------------------------------
+# Микро-локация при провале движения — §11
+# ---------------------------------------------------------------------
+# 4 типа событий (равновероятно):
+#   камень — 1d6
+#   дерево — 2d6
+#   молния — 3d6
+#   гнев богов — 1×lvl (lvl = visible.level, default 1)
+# ---------------------------------------------------------------------
+
+_MICRO_EVENT_TYPES = ("stone", "tree", "lightning", "god_wrath")
+
+
+@dataclass(frozen=True)
+class MicroEventResult:
+    event_type: str  # one of _MICRO_EVENT_TYPES
+    damage: int
+    dice_count: int  # number of d6 to roll for damage
+
+
+def resolve_micro_event(roll: int, level: int = 1) -> MicroEventResult:
+    """Resolve a micro-location event (§11).
+
+    roll: 1..6 from dice. Maps to event type.
+    level: Burt's current level (for god_wrath damage).
+    """
+    _validate_roll(roll)
+    if level < 1:
+        level = 1
+
+    idx = (roll - 1) % len(_MICRO_EVENT_TYPES)
+    event_type = _MICRO_EVENT_TYPES[idx]
+
+    if event_type == "stone":
+        return MicroEventResult(event_type="stone", damage=0, dice_count=1)
+    if event_type == "tree":
+        return MicroEventResult(event_type="tree", damage=0, dice_count=2)
+    if event_type == "lightning":
+        return MicroEventResult(
+            event_type="lightning", damage=0, dice_count=3,
+        )
+    # god_wrath: 1×lvl
+    return MicroEventResult(
+        event_type="god_wrath", damage=level, dice_count=0,
+    )
+
+
+def calculate_micro_damage(
+    micro_event: MicroEventResult, rng,
+) -> int:
+    """Roll damage dice for a micro-location event."""
+    if micro_event.dice_count == 0:
+        return micro_event.damage  # god_wrath: already computed
+    total = 0
+    for _ in range(micro_event.dice_count):
+        total += rng()
+    return total
+
+
+# ---------------------------------------------------------------------
 # Побег — §23
 # ---------------------------------------------------------------------
 # 1 — провал + враг бьёт бесплатно макс
