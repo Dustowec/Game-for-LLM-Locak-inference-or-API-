@@ -1,33 +1,31 @@
 {
   "meta": {
     "life": 1,
-    "day": 1,
-    "step": 19,
-    "session_uuid": "d8222a3f-7d58-40dd-b4f3-04fd7537c085",
-    "session_started": "2026-11-13T18:15:40.615110+00:00",
+    "day": 2,
+    "step": 0,
+    "session_uuid": "791713ba-c58a-4ff0-85bf-e17936992a65",
+    "session_started": "2026-11-13T19:20:23.507843+00:00",
     "config_hash": "v0.7.0"
   },
   "visible": {
-    "hp": 0,
+    "hp": 10,
     "hp_max": 10,
     "mp": 3,
     "mp_max": 3,
-    "eat": true,
+    "eat": false,
     "sleep_counter": 0,
-    "date": "1 day",
+    "date": "2 day",
     "effects": [],
     "location": {
-      "name": "Forest",
+      "name": "Temple",
       "exits": [
-        "north",
-        "east",
         "south",
         "west"
       ]
     },
     "inventory": [],
     "wallet": {
-      "gold": 5,
+      "gold": 4,
       "silver": 5,
       "copper": 0
     },
@@ -35,7 +33,7 @@
     "state": "exploring"
   },
   "hidden": {
-    "hp_raw": 0,
+    "hp_raw": 10,
     "mp_raw": 3,
     "hunger_death_at": [
       8,
@@ -111,13 +109,13 @@
         }
       },
       "node_5": {
-        "type": "field",
+        "type": "temple",
         "entered": true,
         "exits": {
-          "north": "node_8",
-          "east": "node_9",
+          "north": null,
+          "east": null,
           "south": "node_1",
-          "west": "node_10"
+          "west": "node_8"
         }
       },
       "node_6": {
@@ -141,26 +139,6 @@
         }
       },
       "node_8": {
-        "type": "forest",
-        "entered": true,
-        "exits": {
-          "north": "node_11",
-          "east": "node_12",
-          "south": "node_5",
-          "west": "node_13"
-        }
-      },
-      "node_9": {
-        "type": null,
-        "entered": false,
-        "exits": {
-          "north": null,
-          "east": null,
-          "south": null,
-          "west": "node_5"
-        }
-      },
-      "node_10": {
         "type": null,
         "entered": false,
         "exits": {
@@ -169,46 +147,16 @@
           "south": null,
           "west": null
         }
-      },
-      "node_11": {
-        "type": null,
-        "entered": false,
-        "exits": {
-          "north": null,
-          "east": null,
-          "south": "node_8",
-          "west": null
-        }
-      },
-      "node_12": {
-        "type": null,
-        "entered": false,
-        "exits": {
-          "north": null,
-          "east": null,
-          "south": null,
-          "west": "node_8"
-        }
-      },
-      "node_13": {
-        "type": null,
-        "entered": false,
-        "exits": {
-          "north": null,
-          "east": "node_8",
-          "south": null,
-          "west": null
-        }
       }
     },
-    "current_node_id": "node_8",
+    "current_node_id": "node_5",
     "npcs_here": [],
     "events_here": [],
     "has_room_tonight": false,
     "current_mode": "exploring",
     "combat": null,
-    "last_action": "attack_wolf_1",
-    "same_action_count": 1,
+    "last_action": "osmotret",
+    "same_action_count": 6,
     "dice_log_last": [],
     "pending_events": [],
     "spells": {
@@ -218,8 +166,8 @@
     "has_staff": false,
     "teacher_found": false,
     "trained_by": [],
-    "step": 19,
-    "day": 1,
+    "step": 0,
+    "day": 2,
     "resurrection_used_today": false,
     "micro_location": {
       "active": false

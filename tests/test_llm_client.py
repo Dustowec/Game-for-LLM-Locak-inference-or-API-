@@ -252,7 +252,6 @@ class TestCallLlm:
             assert history[0]["content"] == "Partial answer..."
             assert mock_create.call_count == 1, "length с непустым content НЕ должен ретраиться"
             
-            # WARN про обрезание
             warns = [r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING]
             assert any("length" in m.lower() for m in warns), \
                 f"ожидали WARN с 'length', получили: {warns}"
@@ -369,6 +368,34 @@ class TestCallLlm:
             infos = [r.getMessage() for r in caplog.records if r.levelno == logging.INFO]
             assert any("llm usage" in m for m in infos), \
                 f"INFO 'llm usage' должен быть даже без usage, получили: {infos}"
+
+    # -----------------------------------------------------------------
+    # Gemma 3n: фолбэк с system -> user
+    # -----------------------------------------------------------------
+
+    @pytest.mark.asyncio
+    async def test_retry_with_user_when_system_fails(self):
+        """Если движок не поддерживает system (Gemma 3n), ретраим с user."""
+        with patch.object(llm_client, "create_chat_completion") as mock_create:
+            # Первый вызов (system) - ошибка 400
+            # Второй вызов (user) - успех
+            mock_create.side_effect = [
+                RuntimeError("LLM API error 400: roles must alternate user/assistant"),
+                {"choices": [{"message": {"content": "Ok"}}]}
+            ]
+            
+            result, history = await llm_client.call_llm("sys prompt", "user msg", [])
+            
+            assert result == "Ok"
+            assert len(history) == 1
+            
+            # Проверяем, что первый вызов был system, а второй - user
+            call_args_1 = mock_create.call_args_list[0][0][0]
+            call_args_2 = mock_create.call_args_list[1][0][0]
+            
+            assert call_args_1[0]["role"] == "system"
+            assert call_args_2[0]["role"] == "user"
+            assert call_args_2[0]["content"] == "sys prompt"
 
 
 # ---------------------------------------------------------------------
@@ -529,9 +556,9 @@ class TestCreateChatCompletion:
             "клиент обязан тянуть бюджет из конфига"
         )
 
-        @pytest.mark.asyncio
-        async def test_payload_uses_config_timeout(self):
-            """P2: timeout в POST == config.LLM_TIMEOUT_SECONDS."""
+    @pytest.mark.asyncio
+    async def test_payload_uses_config_timeout(self):
+        """P2: timeout в POST == config.LLM_TIMEOUT_SECONDS."""
         captured: dict = {}
         patcher = _patch_aiohttp(
             captured=captured,

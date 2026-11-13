@@ -18,6 +18,7 @@
     - finish_reason=length с непустым content -> принять + WARN.
     - пустой content -> провал попытки (ретрай), в историю НЕ аппендится.
     - после исчерпания ретраев -> fallback (тоже без append).
+    - при ошибке 400 'roles must alternate' (Gemma) система меняет роль на 'user'.
 """
 from __future__ import annotations
 
@@ -69,8 +70,6 @@ async def create_chat_completion(
         "model": _MODEL,
         "messages": messages,
         "temperature": _TEMPERATURE,
-        # Inline access to config.MAX_TOKENS — чтобы env override через
-        # BURT_MAX_TOKENS подхватывался даже после importlib.reload(config).
         "max_tokens": config.MAX_TOKENS,
     }
     
@@ -165,6 +164,14 @@ async def call_llm(
             
         except Exception as e:
             logger.warning(f"LLM call failed (attempt {attempt+1}/{_MAX_RETRIES+1}): {e}")
+            
+            # ХАК ДЛЯ GEMMA/LM STUDIO: если движок вырезает system и падает на чередовании
+            if "roles must alternate" in str(e) and full_messages[0]["role"] == "system":
+                logger.warning("Engine rejected 'system' role (likely Gemma). Retrying with 'user' role.")
+                # Делаем копию, чтобы не мутировать аргументы первого вызова
+                full_messages = [dict(m) for m in full_messages]
+                full_messages[0]["role"] = "user"
+                
             if attempt < _MAX_RETRIES:
                 continue
             logger.error("All attempts failed, using fallback")
