@@ -237,10 +237,46 @@ def execute_action(action: Action, state: dict, rng=None) -> ActionResult:
     visible = state.setdefault("visible", {})
     mode = hidden.get("current_mode", "exploring")
 
+    # Reset "scared" counter on any non-osmotret action.
+    if action.key != "osmotret":
+        hidden["last_action"] = action.key
+        hidden["same_action_count"] = 1
+
     if action.key == "osmotret":
         hidden["step"] = hidden.get("step", 0) + 1
+
+        # Repeat counter: punish "scared" behavior (§25.1).
+        # 1st: normal. 2nd: warn. 3rd+: -1 HP per extra look.
+        last = hidden.get("last_action")
+        count = hidden.get("same_action_count", 0)
+        if last == "osmotret":
+            count += 1
+        else:
+            count = 1
+        hidden["last_action"] = "osmotret"
+        hidden["same_action_count"] = count
+
+        events: list[str] = ["You look around."]
+
+        if count == 2:
+            events.append(
+                "You look around again. Nothing has changed. Satisfied?"
+            )
+        elif count >= 3:
+            damage = 1
+            new_hp = max(0, visible["hp"] - damage)
+            visible["hp"] = new_hp
+            hidden["hp_raw"] = new_hp
+            events.append(
+                "A branch whips your face. You take 1 damage."
+            )
+            events.append(f"HP: {new_hp}/{visible['hp_max']}")
+            if new_hp <= 0:
+                return ActionResult(events=events, game_over=True)
+
         report = sensory.format_sensory_report(visible)
-        return ActionResult(events=["You look around.", report])
+        events.append(report)
+        return ActionResult(events=events)
 
     # ── Micro-location exits (§11) ──────────────────────────
     # Must be BEFORE the generic go_ handler below.

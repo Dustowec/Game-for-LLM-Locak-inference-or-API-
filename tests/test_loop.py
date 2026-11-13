@@ -301,3 +301,57 @@ class TestResolveLocationName:
 
     def test_empty_type_falls_back(self):
         assert _resolve_location_name("", "abc") == "abc"
+        # ─── osmotret repeat punishment (§25.1) ────────────────────
+
+class TestOsmotretPunishment:
+    """3rd+ osmotret in a row costs 1 HP (scared behavior)."""
+
+    def test_first_osmotret_normal(self):
+        st = make_state()
+        r = execute_action(Action("osmotret", "Look"), st)
+        assert st["visible"]["hp"] == 10
+        assert not any("branch" in e.lower() for e in r.events)
+
+    def test_second_osmotret_warns(self):
+        st = make_state()
+        execute_action(Action("osmotret", "Look"), st)
+        r = execute_action(Action("osmotret", "Look"), st)
+        assert st["visible"]["hp"] == 10
+        assert any("nothing has changed" in e.lower() for e in r.events)
+
+    def test_third_osmotret_damages(self):
+        st = make_state()
+        execute_action(Action("osmotret", "Look"), st)
+        execute_action(Action("osmotret", "Look"), st)
+        r = execute_action(Action("osmotret", "Look"), st)
+        assert st["visible"]["hp"] == 9
+        assert st["hidden"]["hp_raw"] == 9
+        assert any("branch" in e.lower() for e in r.events)
+
+    def test_fourth_osmotret_damages_again(self):
+        st = make_state()
+        for _ in range(3):
+            execute_action(Action("osmotret", "Look"), st)
+        r = execute_action(Action("osmotret", "Look"), st)
+        assert st["visible"]["hp"] == 8
+        assert any("branch" in e.lower() for e in r.events)
+
+    def test_other_action_resets_counter(self):
+        st = make_state()
+        execute_action(Action("osmotret", "Look"), st)
+        execute_action(Action("osmotret", "Look"), st)  # warn
+        execute_action(Action("search", "Search"), st, rng=lambda: 3)
+        # Counter reset — next osmotret is "first"
+        r = execute_action(Action("osmotret", "Look"), st)
+        assert st["visible"]["hp"] == 10
+        assert not any("nothing has changed" in e.lower() for e in r.events)
+
+    def test_osmotret_can_kill(self):
+        st = make_state()
+        st["visible"]["hp"] = 1
+        st["hidden"]["hp_raw"] = 1
+        execute_action(Action("osmotret", "Look"), st)
+        execute_action(Action("osmotret", "Look"), st)
+        r = execute_action(Action("osmotret", "Look"), st)
+        assert st["visible"]["hp"] == 0
+        assert r.game_over is True

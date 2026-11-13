@@ -130,6 +130,8 @@ def create_initial_state(
             "has_room_tonight": False,
             "current_mode": "exploring",
             "combat": None,
+            "last_action": None,
+            "same_action_count": 0,
             "dice_log_last": [],
             "pending_events": [],
             "spells": {"element": None, "alignment": None},

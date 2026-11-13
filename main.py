@@ -94,6 +94,8 @@ def _ensure_runtime_fields(state: dict) -> None:
     hidden.setdefault("micro_location", {"active": False})
     hidden.setdefault("combat", None)
     hidden.setdefault("current_mode", "exploring")
+    hidden.setdefault("last_action", None)
+    hidden.setdefault("same_action_count", 0)
 
 
 # ---------------------------------------------------------------------
