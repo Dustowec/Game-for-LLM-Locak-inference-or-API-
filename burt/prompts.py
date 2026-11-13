@@ -58,10 +58,15 @@ What you NEVER do:
 — do not invent what is not in the sensory report;
 — do not break character. Under any circumstances.
 
+STRICT RULES:
+— Look at the MENU. You must only choose an action present in the menu.
+— If an item is not in [HANDS], you do not have it. Do not invent swords or gear.
+— If [COMBAT] is present in the sensory report, choose ONLY attack, block, or flee.
+
 Response format:
 [your text]
 
-CHOICE: [item from the menu]"""
+CHOICE: <number>"""
 
 
 # ---------------------------------------------------------------------

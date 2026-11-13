@@ -1,13 +1,15 @@
-"""Tests for main.py — entry point smoke tests."""
+"""Tests for main.py — entry point smoke tests + П.2–П.5 contracts."""
 from __future__ import annotations
 
 import asyncio
+import logging
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
 import main
-from burt import state_io
+from burt import loop, state_io
 
 
 # ---------------------------------------------------------------------
@@ -119,7 +121,6 @@ class TestHungerCheck:
         st["hidden"]["step"] = 8
         st["visible"]["eat"] = False
         st["hidden"]["resurrection_used_today"] = False
-        # roll=1 -> final death (roll != 6)
         assert main._check_hunger_death(st, lambda: 1) == "final_death"
 
     def test_resurrection_on_roll_6(self):
@@ -167,3 +168,244 @@ class TestDoSleep:
         st["visible"]["eat"] = True
         main._do_sleep(st)
         assert st["visible"]["eat"] is False
+
+
+# ---------------------------------------------------------------------
+# П.2: _determine_death_cause (pure helper)
+# ---------------------------------------------------------------------
+
+class TestDetermineDeathCause:
+    """П.2: pure helper, no side effects."""
+
+    def test_combat_attack(self):
+        st = _fresh_state()
+        st["visible"]["hp"] = 0
+        cause = main._determine_death_cause(
+            st, loop.Action("attack_wolf_1", "Attack wolf"),
+        )
+        assert cause == "combat"
+
+    def test_combat_block(self):
+        st = _fresh_state()
+        st["visible"]["hp"] = 0
+        cause = main._determine_death_cause(
+            st, loop.Action("block", "Block"),
+        )
+        assert cause == "combat"
+
+    def test_combat_flee(self):
+        st = _fresh_state()
+        st["visible"]["hp"] = 0
+        cause = main._determine_death_cause(
+            st, loop.Action("flee", "Flee"),
+        )
+        assert cause == "combat"
+
+    def test_osmotret_penalty(self):
+        st = _fresh_state()
+        st["visible"]["hp"] = 0
+        st["hidden"]["last_action"] = "osmotret"
+        st["hidden"]["same_action_count"] = 3
+        cause = main._determine_death_cause(
+            st, loop.Action("osmotret", "Look around"),
+        )
+        assert cause == "osmotret_penalty"
+
+    def test_god_wrath_micro_event(self):
+        st = _fresh_state()
+        st["visible"]["hp"] = 0
+        st["hidden"]["micro_location"] = {
+            "active": True, "damage": 1, "event_type": "god_wrath",
+        }
+        cause = main._determine_death_cause(
+            st, loop.Action("go_back", "Back"),
+        )
+        assert cause == "god_wrath"
+
+    def test_stone_micro_event(self):
+        st = _fresh_state()
+        st["visible"]["hp"] = 0
+        st["hidden"]["micro_location"] = {
+            "active": True, "damage": 3, "event_type": "stone",
+        }
+        cause = main._determine_death_cause(
+            st, loop.Action("go_north", "Go north"),
+        )
+        assert cause == "stone"
+
+    def test_hunger(self):
+        """hp>0 (hunger doesn't zero HP) + non-combat action -> hunger."""
+        st = _fresh_state()
+        st["visible"]["hp"] = 5
+        st["visible"]["eat"] = False
+        st["hidden"]["step"] = 18
+        cause = main._determine_death_cause(
+            st, loop.Action("search", "Search"),
+        )
+        assert cause == "hunger"
+
+    def test_unknown(self):
+        """hp=0, no combat/micro/osmotret signal -> unknown."""
+        st = _fresh_state()
+        st["visible"]["hp"] = 0
+        cause = main._determine_death_cause(
+            st, loop.Action("search", "Search"),
+        )
+        assert cause == "unknown"
+
+
+# ---------------------------------------------------------------------
+# П.2: _log_death (WARNING with cause, step, day, hp, location)
+# ---------------------------------------------------------------------
+
+class TestLogDeath:
+    def test_warning_contains_cause(self, caplog):
+        st = _fresh_state()
+        st["visible"]["hp"] = 0
+        st["hidden"]["step"] = 17
+        st["hidden"]["day"] = 1
+        st["hidden"]["last_action"] = "osmotret"
+        st["hidden"]["same_action_count"] = 3
+        action = loop.Action("osmotret", "Look around")
+
+        with caplog.at_level(logging.WARNING):
+            main._log_death(st, action)
+
+        warns = [r.getMessage() for r in caplog.records
+                 if r.levelno == logging.WARNING]
+        assert any("cause=osmotret_penalty" in m for m in warns), warns
+
+    def test_warning_contains_step_day_hp_location(self, caplog):
+        st = _fresh_state()
+        st["visible"]["hp"] = 0
+        st["visible"]["location"]["name"] = "Dungeon"
+        st["hidden"]["step"] = 11
+        st["hidden"]["day"] = 2
+        st["hidden"]["micro_location"] = {
+            "active": True, "damage": 1, "event_type": "god_wrath",
+        }
+        action = loop.Action("go_north", "Go north")
+
+        with caplog.at_level(logging.WARNING):
+            main._log_death(st, action)
+
+        warns = [r.getMessage() for r in caplog.records
+                 if r.levelno == logging.WARNING]
+        assert any(
+            "step=11" in m and "day=2" in m and "hp=0" in m
+            and "location=Dungeon" in m
+            and "cause=god_wrath" in m
+            for m in warns
+        ), warns
+
+
+# ---------------------------------------------------------------------
+# П.3: _log_result_events (все на INFO)
+# ---------------------------------------------------------------------
+
+class TestLogResultEvents:
+    def test_events_logged_at_info(self, caplog):
+        result = loop.ActionResult(events=["event one", "event two"])
+        with caplog.at_level(logging.INFO):
+            main._log_result_events(result)
+        infos = [r.getMessage() for r in caplog.records
+                 if r.levelno == logging.INFO]
+        assert any("event one" in m for m in infos), infos
+        assert any("event two" in m for m in infos), infos
+
+    def test_state_event_at_info(self, caplog):
+        result = loop.ActionResult(events=["[STATE]\nHP: 10/10"])
+        with caplog.at_level(logging.INFO):
+            main._log_result_events(result)
+        infos = [r.getMessage() for r in caplog.records
+                 if r.levelno == logging.INFO]
+        assert any("[STATE]" in m for m in infos), infos
+
+    def test_combat_event_at_info(self, caplog):
+        result = loop.ActionResult(events=["[COMBAT]\nEnemy: wolf"])
+        with caplog.at_level(logging.INFO):
+            main._log_result_events(result)
+        infos = [r.getMessage() for r in caplog.records
+                 if r.levelno == logging.INFO]
+        assert any("[COMBAT]" in m for m in infos), infos
+
+
+# ---------------------------------------------------------------------
+# П.4: _log_inject (header+menu INFO, full DEBUG)
+# ---------------------------------------------------------------------
+
+class TestLogInject:
+    def _menu(self):
+        return [
+            loop.Action("osmotret", "Look around"),
+            loop.Action("go_north", "Go north"),
+        ]
+
+    def test_header_info(self, caplog):
+        with caplog.at_level(logging.INFO):
+            main._log_inject(
+                step=5, day=2, mode="exploring",
+                menu=self._menu(), user_msg="payload",
+            )
+        infos = [r.getMessage() for r in caplog.records
+                 if r.levelno == logging.INFO]
+        assert any(
+            "inject" in m
+            and "mode=exploring" in m
+            and "step=5" in m
+            and "day=2" in m
+            and "actions=2" in m
+            for m in infos
+        ), infos
+
+    def test_menu_listed_info(self, caplog):
+        with caplog.at_level(logging.INFO):
+            main._log_inject(
+                step=0, day=1, mode="exploring",
+                menu=self._menu(), user_msg="",
+            )
+        infos = [r.getMessage() for r in caplog.records
+                 if r.levelno == logging.INFO]
+        assert any(
+            "0=osmotret" in m and "1=go_north" in m for m in infos
+        ), infos
+
+    def test_full_text_debug(self, caplog):
+        user_msg = "[STATE]\nHP: 10/10\n\nMENU:\n0. Look around\n\nCHOICE:"
+        with caplog.at_level(logging.DEBUG):
+            main._log_inject(
+                step=0, day=1, mode="exploring",
+                menu=self._menu(), user_msg=user_msg,
+            )
+        debugs = [r.getMessage() for r in caplog.records
+                  if r.levelno == logging.DEBUG]
+        assert any(
+            "[STATE]" in m and "MENU:" in m for m in debugs
+        ), debugs
+
+
+# ---------------------------------------------------------------------
+# П.5: no truncation
+# ---------------------------------------------------------------------
+
+class TestNoTruncation:
+    @pytest.mark.asyncio
+    async def test_llm_answer_logged_full(self, caplog):
+        """Answer must not be truncated to 200 chars."""
+        st = _fresh_state()
+        long_answer = "X" * 500 + "\nCHOICE: 0"
+
+        async def fake_call(system_msg, user_msg, history=None):
+            return long_answer, []
+
+        with patch.object(main.llm_client, "call_llm", side_effect=fake_call):
+            with caplog.at_level(logging.INFO):
+                await main.run_turn(st, [], rng=lambda: 4, dry_run=False)
+
+        llm_logs = [r.getMessage() for r in caplog.records
+                    if "LLM:" in r.getMessage()]
+        assert llm_logs, "LLM answer should be logged"
+        max_len = max(len(m) for m in llm_logs)
+        assert max_len > 300, (
+            f"answer must NOT be truncated at 200; got max len {max_len}"
+        )

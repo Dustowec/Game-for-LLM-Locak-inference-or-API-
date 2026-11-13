@@ -72,7 +72,6 @@ SLEEP_THRESHOLD = 20
 CRITICAL_HP_RATIO = 0.25
 
 # §23: locations where entering can trigger an ambush/encounter.
-# Mapping: English location type -> spawn table key.
 _ENCOUNTER_LOCATIONS = {
     "forest": "forest",
     "dungeon": "dungeon",
@@ -81,6 +80,19 @@ _ENCOUNTER_LOCATIONS = {
     "swamp": "swamp",
 }
 _AMBUSH_LOCATION = "thicket"  # §32: ambush at thicket
+
+# П.1: Словарь синонимов для парсинга текста.
+_ACTION_SYNONYMS = {
+    "go_north": ["north", "walk north", "step north", "head north", "move north"],
+    "go_east": ["east", "walk east", "step east", "head east", "move east"],
+    "go_south": ["south", "walk south", "step south", "head south", "move south"],
+    "go_west": ["west", "walk west", "step west", "head west", "move west"],
+    "osmotret": ["look around", "check my surroundings", "look about", "examine surroundings"],
+    "search": ["search", "rummage", "look for", "find", "scavenge"],
+    "eat_food": ["eat", "consume bread", "take the bread", "munch"],
+    "drink_water": ["drink", "take water"],
+    "sleep": ["sleep", "rest", "close my eyes"],
+}
 
 
 def build_menu(visible: dict, state: dict) -> list[Action]:
@@ -103,8 +115,6 @@ def build_menu(visible: dict, state: dict) -> list[Action]:
         return actions
 
     actions: list[Action] = []
-    # TODO(O4): Burt attacks first (initiates combat from exploring).
-    # Deferred until npc.py: no enemy sources in exploring yet.
     actions.append(Action(key="osmotret", label="Look around"))
 
     exits = visible.get("location", {}).get("exits", [])
@@ -172,11 +182,8 @@ def parse_choice(user_text: str, actions: list[Action]) -> Action:
 
     Strategy (in order):
     1. Look for a line starting with "CHOICE:" (case-insensitive).
-       - After CHOICE: try int index -> actions[idx]
-       - Try action key match (e.g. "attack_wolf_1")
-       - Try label match (e.g. "Attack wolf")
-       - Try substring match (e.g. "attack" in text)
-    2. Fallback: find any action label/key mentioned in the text.
+    2. Fallback: find any action label/key/synonym mentioned in text.
+       If multiple mentioned, the LAST one (rfind) wins.
     3. Fallback: first action (index 0).
     """
     if not actions:
@@ -214,13 +221,26 @@ def parse_choice(user_text: str, actions: list[Action]) -> Action:
                 if action.label.lower() in choice_lower:
                     return action
 
-    # 2. Fallback: label/key anywhere in text
+    # 2. Fallback: label/key/synonym anywhere in text (LAST match wins)
     text_lower = user_text.lower()
+    best_idx = -1
+    best_action = None
+
     for action in actions:
-        if action.label.lower() in text_lower:
-            return action
-        if action.key.lower() in text_lower:
-            return action
+        candidates = [action.label.lower(), action.key.lower()]
+        if action.key in _ACTION_SYNONYMS:
+            candidates.extend(_ACTION_SYNONYMS[action.key])
+
+        for cand in candidates:
+            if not cand:
+                continue
+            idx = text_lower.rfind(cand)
+            if idx > best_idx:
+                best_idx = idx
+                best_action = action
+
+    if best_action is not None:
+        return best_action
 
     # 3. Fallback: first action
     return actions[0]
@@ -245,8 +265,6 @@ def execute_action(action: Action, state: dict, rng=None) -> ActionResult:
     if action.key == "osmotret":
         hidden["step"] = hidden.get("step", 0) + 1
 
-        # Repeat counter: punish "scared" behavior (§25.1).
-        # 1st: normal. 2nd: warn. 3rd+: -1 HP per extra look.
         last = hidden.get("last_action")
         count = hidden.get("same_action_count", 0)
         if last == "osmotret":
@@ -279,8 +297,6 @@ def execute_action(action: Action, state: dict, rng=None) -> ActionResult:
         return ActionResult(events=events)
 
     # ── Micro-location exits (§11) ──────────────────────────
-    # Must be BEFORE the generic go_ handler below.
-
     if action.key == "go_back":
         micro = hidden.get("micro_location")
         if micro is None or not micro.get("active"):
@@ -460,7 +476,6 @@ def execute_action(action: Action, state: dict, rng=None) -> ActionResult:
         visible["eat"] = eat
         visible["hp"] = new_hp
         hidden["hp_raw"] = new_hp
-        # Remove one food item from inventory
         inventory = visible.get("inventory", [])
         for i, item in enumerate(inventory):
             name = item.get("name", "").lower()
@@ -475,7 +490,6 @@ def execute_action(action: Action, state: dict, rng=None) -> ActionResult:
         )
 
     if action.key == "drink_water":
-        # Water doesn't restore HP directly; just consumes item.
         inventory = visible.get("inventory", [])
         for i, item in enumerate(inventory):
             name = item.get("name", "").lower()
@@ -562,11 +576,7 @@ def _execute_combat(action: Action, state: dict, rng) -> ActionResult:
 
 
 def _build_burt_stats(visible: dict, hidden: dict) -> BurtStats:
-    """Assemble BurtStats from visible + hidden for combat.
-
-    spells_available = element or alignment chosen.
-    damage/master/modifier use BurtStats defaults until weapon system lands.
-    """
+    """Assemble BurtStats from visible + hidden for combat."""
     spells = hidden.get("spells") or {}
     if not isinstance(spells, dict):
         spells = {}
@@ -601,11 +611,7 @@ def error_result(msg: str) -> ActionResult:
 
 
 def _enter_new_node(graph: dict, node_id: str, rng) -> None:
-    """Generate a new node per §17.
-
-    world.enter_node expects roll_size in 1..3 for roll_type=5,
-    in 1..6 for roll_type=6. We normalize before calling.
-    """
+    """Generate a new node per §17."""
     roll_count = rng()
     roll_dirs = rng()
     roll_type = rng()
@@ -638,12 +644,7 @@ def _maybe_start_combat_on_enter(
     visible: dict,
     rng,
 ) -> str | None:
-    """Roll encounter on entering a location (O1: on-entry roll).
-
-    Thicket -> always ambush (§32).
-    Dangerous locations -> 1-2 attack (enemy initiative), 3-6 quiet.
-    Safe locations -> no combat.
-    """
+    """Roll encounter on entering a location (O1: on-entry roll)."""
     if location_type == _AMBUSH_LOCATION:
         enemies = spawn.spawn_ambush(rng(), rng())
         return _start_combat(enemies, "enemy", hidden, visible)
@@ -667,16 +668,7 @@ def _handle_movement_failure(
     visible: dict,
     rng,
 ) -> ActionResult:
-    """Movement failure (§11) — micro-location with 2 exits.
-
-    Burt enters a micro-location between source and target nodes.
-    Two guaranteed exits: back (return to source) and forward
-    (try again to reach target).
-
-    Negative event: tripped / lost.
-    Damage tied to event:
-      stone 1d6, tree 2d6, lightning 3d6, god's wrath 1×lvl.
-    """
+    """Movement failure (§11) — micro-location with 2 exits."""
     hidden["step"] = hidden.get("step", 0) + 1
 
     current_node = hidden.get("current_node_id", "start")
@@ -711,6 +703,10 @@ def _handle_movement_failure(
             f"Failed to move {direction}. "
             f"Micro-event: {micro_event.event_type}."
         )
+
+    # ── ПРОВЕРКА СМЕРТИ ОТ МИКРО-СОБЫТИЯ (вынесена из fail_bad) ──
+    if visible.get("hp", 0) <= 0:
+        return ActionResult(events=[event_msg], game_over=True)
 
     hidden["micro_location"] = {
         "active": True,

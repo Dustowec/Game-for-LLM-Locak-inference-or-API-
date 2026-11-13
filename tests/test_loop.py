@@ -156,7 +156,6 @@ class TestBuildMenuCombat:
         st["hidden"]["combat"] = cs.to_dict()
         keys = _keys(build_menu(st["visible"], st))
         assert f"attack_{cs.enemies[0].id}" not in keys
-        # Все мертвы -> нет ни block, ни flee
         assert "block" not in keys
         assert "flee" not in keys
 
@@ -166,7 +165,7 @@ class TestBuildMenuCombat:
         assert build_menu(st["visible"], st) == []
 
 
-# ─── parse_choice ──────────────────────────────────────────
+# ─── parse_choice (базовые) ────────────────────────────────
 
 class TestParseChoice:
     def _two(self):
@@ -179,8 +178,10 @@ class TestParseChoice:
         assert parse_choice("CHOICE: 1", self._two()).key == "b"
 
     def test_prefix_match_by_label(self):
-        actions = [Action("go_north", "на сервер")]
-        assert parse_choice("иду на сервер", actions).key == "go_north"
+        actions = [Action("special", "Secret passage")]
+        assert parse_choice(
+            "I take the Secret passage now", actions,
+        ).key == "special"
 
     def test_fallback_first_on_unknown(self):
         assert parse_choice("qwerty", self._two()).key == "a"
@@ -190,6 +191,68 @@ class TestParseChoice:
 
     def test_invalid_number_fallback(self):
         assert parse_choice("CHOICE: 99", self._two()).key == "a"
+
+
+# ─── parse_choice: синонимы + rfind (П.1) ──────────────────
+
+class TestParseChoiceSynonyms:
+    """П.1: text fallback with verb synonyms; last mention wins."""
+
+    def _menu(self):
+        return [
+            Action("osmotret", "Look around"),
+            Action("go_north", "Go north"),
+            Action("go_east", "Go east"),
+            Action("search", "Search"),
+        ]
+
+    def test_walk_north_synonym(self):
+        assert parse_choice("I walk north.", self._menu()).key == "go_north"
+
+    def test_step_north_synonym(self):
+        assert parse_choice("I step north.", self._menu()).key == "go_north"
+
+    def test_head_north_synonym(self):
+        assert parse_choice("I head north.", self._menu()).key == "go_north"
+
+    def test_look_around_synonym(self):
+        assert parse_choice("I look around.", self._menu()).key == "osmotret"
+
+    def test_check_surroundings_synonym(self):
+        assert parse_choice(
+            "I check my surroundings.", self._menu(),
+        ).key == "osmotret"
+
+    def test_last_mention_wins(self):
+        text = "I look around. Then I walk north."
+        assert parse_choice(text, self._menu()).key == "go_north"
+
+    def test_last_mention_wins_reverse(self):
+        text = "I walk north. Then I look around."
+        assert parse_choice(text, self._menu()).key == "osmotret"
+
+    def test_rummage_for_search(self):
+        assert parse_choice("I rummage.", self._menu()).key == "search"
+
+    def test_look_for_is_search_not_osmotret(self):
+        assert parse_choice("I look for food.", self._menu()).key == "search"
+
+    def test_eat_synonym(self):
+        menu = [
+            Action("osmotret", "Look around"),
+            Action("eat_food", "Eat food"),
+        ]
+        assert parse_choice("I eat the bread.", menu).key == "eat_food"
+
+    def test_choice_number_wins_over_text(self):
+        # CHOICE: 0 wins even though text mentions walk north.
+        text = "I walk north.\nCHOICE: 0"
+        assert parse_choice(text, self._menu()).key == "osmotret"
+
+    def test_empty_choice_falls_to_text(self):
+        # "CHOICE:" with nothing after -> text fallback.
+        text = "CHOICE:\nI walk north."
+        assert parse_choice(text, self._menu()).key == "go_north"
 
 
 # ─── execute_action: мирные действия ───────────────────────
@@ -204,13 +267,10 @@ class TestExecuteActionExploring:
 
     def test_go_north_moves_and_increments_step(self):
         st = make_state()
-        # rng=4: movement "normal", on-entry "quiet",
-        # + node generation rolls (all 4).
         result = execute_action(Action("go_north", "Go"), st,
                                 rng=lambda: 4)
         assert st["hidden"]["current_node_id"] != "start"
         assert st["hidden"]["step"] == 1
-        # world preset: north from start is "road" -> "Road".
         assert st["visible"]["location"]["name"] == "Road"
         assert isinstance(result, ActionResult)
 
@@ -290,10 +350,10 @@ class TestErrorResult:
 # ─── _resolve_location_name ────────────────────────────────
 
 class TestResolveLocationName:
-    def test_known_type_старт(self):
+    def test_known_type_crossroads(self):
         assert _resolve_location_name("crossroads", "start") == "Crossroads"
 
-    def test_known_type_лес(self):
+    def test_known_type_forest(self):
         assert _resolve_location_name("forest", "forest_1") == "Forest"
 
     def test_unknown_type_falls_back_to_node_id(self):
@@ -301,7 +361,9 @@ class TestResolveLocationName:
 
     def test_empty_type_falls_back(self):
         assert _resolve_location_name("", "abc") == "abc"
-        # ─── osmotret repeat punishment (§25.1) ────────────────────
+
+
+# ─── osmotret repeat punishment (§25.1) ────────────────────
 
 class TestOsmotretPunishment:
     """3rd+ osmotret in a row costs 1 HP (scared behavior)."""
@@ -339,9 +401,8 @@ class TestOsmotretPunishment:
     def test_other_action_resets_counter(self):
         st = make_state()
         execute_action(Action("osmotret", "Look"), st)
-        execute_action(Action("osmotret", "Look"), st)  # warn
+        execute_action(Action("osmotret", "Look"), st)
         execute_action(Action("search", "Search"), st, rng=lambda: 3)
-        # Counter reset — next osmotret is "first"
         r = execute_action(Action("osmotret", "Look"), st)
         assert st["visible"]["hp"] == 10
         assert not any("nothing has changed" in e.lower() for e in r.events)
@@ -355,3 +416,24 @@ class TestOsmotretPunishment:
         r = execute_action(Action("osmotret", "Look"), st)
         assert st["visible"]["hp"] == 0
         assert r.game_over is True
+
+    class TestLethalMovement:
+        """Проверка, что смертельный урон от микро-события вызывает game_over (даже при обычном fail)."""
+
+    def test_movement_fail_can_kill(self):
+        st = make_state()
+        st["visible"]["hp"] = 1
+        st["hidden"]["hp_raw"] = 1
+        
+        # rng side_effect:
+        # 1. move_roll (2 -> fail)
+        # 2. event_roll (6 -> lightning)
+        # 3+. damage_roll (6 -> max damage)
+        rolls = [2, 6, 6, 6, 6, 6, 6]
+        def rng():
+            return rolls.pop(0) if rolls else 6
+
+        result = execute_action(Action("go_north", "Go"), st, rng=rng)
+        
+        assert st["visible"]["hp"] == 0
+        assert result.game_over is True, "Должен быть game_over, если HP упало до 0 от молнии"

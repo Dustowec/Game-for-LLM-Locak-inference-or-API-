@@ -76,11 +76,33 @@ class TestBurtSystemPrompt:
     def test_response_format_marker(self):
         assert "CHOICE:" in prompts.BURT_SYSTEM_PROMPT
 
-    def test_response_format_placeholder(self):
-        assert "[item from the menu]" in prompts.BURT_SYSTEM_PROMPT
-
     def test_burt_text_placeholder(self):
         assert "[your text]" in prompts.BURT_SYSTEM_PROMPT
+
+
+# ---------------------------------------------------------------------
+# P3: Prompt Constraints (Menu, HANDS, Combat, Number choice)
+# ---------------------------------------------------------------------
+
+class TestBurtSystemPromptP3Rules:
+    """P3: Strict rules to prevent hallucination and mode confusion."""
+
+    def test_choice_format_is_number(self):
+        # Model must output "CHOICE: <number>", not "CHOICE: north"
+        assert "CHOICE: <number>" in prompts.BURT_SYSTEM_PROMPT
+
+    def test_menu_only_rule(self):
+        # Model must only choose from the provided MENU
+        assert "only choose an action present in the menu" in prompts.BURT_SYSTEM_PROMPT.lower()
+
+    def test_no_phantom_inventory(self):
+        # Model must not invent items (like swords) if not in HANDS
+        assert "if an item is not in [hands], you do not have it" in prompts.BURT_SYSTEM_PROMPT.lower()
+
+    def test_combat_mode_rule(self):
+        # Model must recognize [COMBAT] and pick appropriate actions
+        assert "if [combat] is present" in prompts.BURT_SYSTEM_PROMPT.lower()
+        assert "attack, block, or flee" in prompts.BURT_SYSTEM_PROMPT.lower()
 
 
 # ---------------------------------------------------------------------
@@ -195,7 +217,8 @@ class TestDiarySummaryPrompt:
         assert "what repeats" in prompts.DIARY_SUMMARY_PROMPT
 
     def test_voice_of_burt(self):
-        assert "in Burt's voice" in prompts.MEMORY_SUMMARY_PROMPT
+        # Copy-paste bug fixed: must check DIARY_SUMMARY, not MEMORY.
+        assert "in burt's voice" in prompts.DIARY_SUMMARY_PROMPT.lower()
 
     def test_dry_no_complaints(self):
         assert "dry, without complaints" in prompts.DIARY_SUMMARY_PROMPT
@@ -220,7 +243,8 @@ class TestMemorySummaryPrompt:
         assert "gather" in prompts.MEMORY_SUMMARY_PROMPT.lower()
 
     def test_voice_of_burt(self):
-        assert "In Burt's voice" in prompts.MEMORY_SUMMARY_PROMPT
+        # Case-insensitive: the phrase sits mid-sentence in the prompt.
+        assert "in burt's voice" in prompts.MEMORY_SUMMARY_PROMPT.lower()
 
     def test_dry(self):
         assert "dry" in prompts.MEMORY_SUMMARY_PROMPT.lower()

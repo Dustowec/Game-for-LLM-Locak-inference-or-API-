@@ -9,14 +9,6 @@ One turn:
   5. Parse the choice, execute the action.
   6. Post-turn: death check, forced sleep, day wrap, quest expiry.
   7. Save state.
-
-Usage:
-  python main.py                       # continue from state.json (or new)
-  python main.py --state my.json       # custom state file
-  python main.py --new                 # start a new life
-  python main.py --max-steps 5         # stop after N steps (debug)
-  python main.py --dry-run             # no LLM, print report+menu
-  python main.py --log-level INFO      # logging verbosity
 """
 from __future__ import annotations
 
@@ -53,7 +45,7 @@ logger = logging.getLogger("burt.main")
 
 DEFAULT_STATE_PATH = Path("state.json")
 DEFAULT_MAX_STEPS = 10_000
-CONFIG_HASH = "v0.7.0"  # bump when config.py changes affect state
+CONFIG_HASH = "v0.7.0"
 
 
 # ---------------------------------------------------------------------
@@ -61,26 +53,18 @@ CONFIG_HASH = "v0.7.0"  # bump when config.py changes affect state
 # ---------------------------------------------------------------------
 
 def _sync_meta_from_hidden(state: dict) -> None:
-    """Bring meta["step"] / meta["day"] in sync with hidden.
-
-    loop.py writes hidden["step"] and hidden["day"];
-    validate_state checks meta["step"] and meta["day"].
-    Without this, save_state raises after the first turn.
-    """
     hidden = state.setdefault("hidden", {})
     meta = state.setdefault("meta", {})
     if "step" in hidden:
         meta["step"] = hidden["step"]
     if "day" in hidden:
         meta["day"] = hidden["day"]
-    # Also mirror date if loop wrote it
     visible = state.setdefault("visible", {})
     if "day" in hidden:
         visible["date"] = f"{hidden['day']} day"
 
 
 def _sync_hidden_from_meta(state: dict) -> None:
-    """Initial sync: hidden.step/day from meta (for fresh state)."""
     meta = state.setdefault("meta", {})
     hidden = state.setdefault("hidden", {})
     hidden.setdefault("step", meta.get("step", 0))
@@ -88,7 +72,6 @@ def _sync_hidden_from_meta(state: dict) -> None:
 
 
 def _ensure_runtime_fields(state: dict) -> None:
-    """Add fields that main.py needs but state.py doesn't define yet."""
     hidden = state.setdefault("hidden", {})
     hidden.setdefault("resurrection_used_today", False)
     hidden.setdefault("micro_location", {"active": False})
@@ -103,7 +86,6 @@ def _ensure_runtime_fields(state: dict) -> None:
 # ---------------------------------------------------------------------
 
 def make_new_state(life: int = 1) -> dict:
-    """Create a fresh initial state."""
     return state_mod.create_initial_state(
         life=life,
         session_uuid=str(uuid.uuid4()),
@@ -113,15 +95,73 @@ def make_new_state(life: int = 1) -> dict:
 
 
 # ---------------------------------------------------------------------
+# Logging helpers (П.2, П.3, П.4)
+# ---------------------------------------------------------------------
+
+def _determine_death_cause(state: dict, action: loop.Action) -> str:
+    """П.2: pure helper to determine what killed Burt."""
+    visible = state["visible"]
+    hidden = state["hidden"]
+    hp = visible.get("hp", 0)
+
+    # 1. Combat action
+    if action.key.startswith("attack_") or action.key in ("block", "flee"):
+        return "combat"
+
+    # 2. Micro event (god_wrath, stone, tree, etc.)
+    micro = hidden.get("micro_location") or {}
+    if micro.get("active") and micro.get("damage", 0) > 0:
+        return micro.get("event_type", "micro_event")
+
+    # 3. Osmotret penalty
+    if action.key == "osmotret" and hidden.get("same_action_count", 0) >= 3:
+        return "osmotret_penalty"
+
+    # 4. Hunger (hp > 0 because hunger doesn't zero HP in state directly)
+    if hp > 0 and not visible.get("eat", True) and hidden.get("step") in hunger.HUNGER_DEATH_AT:
+        return "hunger"
+
+    return "unknown"
+
+
+def _log_death(state: dict, action: loop.Action) -> None:
+    """П.2: log death with cause, step, day, hp, location."""
+    visible = state["visible"]
+    hidden = state["hidden"]
+    cause = _determine_death_cause(state, action)
+    
+    logger.warning(
+        "Burt died | cause=%s | step=%d day=%d hp=%d | location=%s",
+        cause,
+        hidden.get("step", 0),
+        hidden.get("day", 1),
+        visible.get("hp", 0),
+        visible.get("location", {}).get("name", "Unknown")
+    )
+
+
+def _log_result_events(result: loop.ActionResult) -> None:
+    """П.3: log all result events at INFO (noisy but explicit)."""
+    for ev in result.events:
+        logger.info("event: %s", ev)
+
+
+def _log_inject(step: int, day: int, mode: str, menu: list[loop.Action], user_msg: str) -> None:
+    """П.4: log LLM inject (header+menu INFO, full DEBUG)."""
+    actions_str = ", ".join(f"{i}={a.key}" for i, a in enumerate(menu))
+    logger.info(
+        "inject | mode=%s | step=%d day=%d | actions=%d",
+        mode, step, day, len(menu)
+    )
+    logger.info("inject menu: %s", actions_str)
+    logger.debug("inject full:\n%s", user_msg)
+
+
+# ---------------------------------------------------------------------
 # Turn loop
 # ---------------------------------------------------------------------
 
 async def run_turn(state: dict, history: list[dict], rng, dry_run: bool) -> tuple[bool, list[dict]]:
-    """Run one game turn. Return (game_over, history).
-
-    game_over=True only on final death (§4). Resurrection and new life
-    are handled by the caller.
-    """
     visible = state["visible"]
     hidden = state["hidden"]
 
@@ -154,33 +194,42 @@ async def run_turn(state: dict, history: list[dict], rng, dry_run: bool) -> tupl
     # ── 5. LLM call ───────────────────────────────────────────
     menu_text = "\n".join(f"{i}. {a.label}" for i, a in enumerate(menu))
     user_msg = f"{report}\n\nMENU:\n{menu_text}\n\nCHOICE:"
+    
+    _log_inject(step, hidden.get("day", 1), hidden.get("current_mode", "exploring"), menu, user_msg)
+    
     answer, history = await llm_client.call_llm(
         prompts.BURT_SYSTEM_PROMPT, user_msg, history,
     )
-    logger.info("LLM: %s", answer[:200])
+    
+    # П.5: No truncation
+    logger.info("LLM: %s", answer)
 
     # ── 6. Parse and execute ─────────────────────────────────
     action = loop.parse_choice(answer, menu)
     logger.info("Action: %s (%s)", action.key, action.label)
     result = loop.execute_action(action, state, rng=rng)
 
-    for ev in result.events:
-        logger.debug("event: %s", ev)
+    _log_result_events(result)
 
     # ── 7. Save history (trim if too long) ───────────────────
     if len(history) > 40:
-        # Keep last 20 messages (10 turns) + system is re-added each call
         history = history[-20:]
 
     # ── 8. Game over? ────────────────────────────────────────
     if result.game_over:
-        logger.warning("Burt died (game_over)")
+        _log_death(state, action)
         return True, history
 
     # ── 9. Post-turn: hunger death check ─────────────────────
     death_outcome = _check_hunger_death(state, rng)
     if death_outcome == "final_death":
-        logger.warning("Final death from hunger")
+        logger.warning(
+            "Burt died | cause=hunger | step=%d day=%d hp=%d | location=%s",
+            hidden.get("step", 0),
+            hidden.get("day", 1),
+            visible.get("hp", 0),
+            visible.get("location", {}).get("name", "Unknown")
+        )
         return True, history
     if death_outcome == "resurrected":
         visible["hp"] = 2
@@ -195,8 +244,7 @@ async def run_turn(state: dict, history: list[dict], rng, dry_run: bool) -> tupl
         logger.info("Forced sleep (step 20)")
         _do_sleep(state)
 
-    # ── 11. Daily expiry (after sleep, if day changed) ───────
-    # (cheap to call every turn, no-op if nothing expired)
+    # ── 11. Daily expiry ─────────────────────────────────────
     quests.expire_blockades(state)
     quests.expire_deceit_penalties(state)
 
@@ -206,7 +254,6 @@ async def run_turn(state: dict, history: list[dict], rng, dry_run: bool) -> tupl
 
 
 def _check_hunger_death(state: dict, rng) -> str:
-    """Run hunger death check. Return 'no_death' | 'resurrected' | 'final_death'."""
     visible = state["visible"]
     hidden = state["hidden"]
     step = hidden.get("step", 0)
@@ -228,7 +275,6 @@ def _check_hunger_death(state: dict, rng) -> str:
 
 
 def _do_sleep(state: dict) -> None:
-    """Apply sleep effects and wrap the day."""
     visible = state["visible"]
     hidden = state["hidden"]
     hp_max = visible.get("hp_max", 10)
@@ -261,7 +307,6 @@ async def game_loop(
     dry_run: bool,
     state_path: Path,
 ) -> None:
-    """Run the game until death, max_steps, or Ctrl+C."""
     rng = dice.roll_d6
     step_count = 0
 
@@ -278,9 +323,8 @@ async def game_loop(
         step_count += 1
 
         if dry_run:
-            break  # one turn is enough for inspection
+            break
 
-        # Save after each turn (atomic)
         try:
             state_io.save_state(state_path, state)
         except Exception:
@@ -321,7 +365,6 @@ async def main() -> int:
 
     setup_logging(args.log_level)
 
-    # ── Load or create state ─────────────────────────────────
     state_path = args.state
     if args.new:
         state = make_new_state(life=1)
@@ -346,7 +389,6 @@ async def main() -> int:
         _sync_hidden_from_meta(state)
         _ensure_runtime_fields(state)
 
-    # ── Save initial state (if new) ──────────────────────────
     if args.new or not state_io.state_exists(state_path):
         try:
             _sync_meta_from_hidden(state)
@@ -356,7 +398,6 @@ async def main() -> int:
             logger.exception("Failed to save initial state")
             return 1
 
-    # ── Run loop ─────────────────────────────────────────────
     history: list[dict] = []
     try:
         await game_loop(state, history, args.max_steps, args.dry_run, state_path)
@@ -366,7 +407,6 @@ async def main() -> int:
         logger.exception("Fatal error in game loop")
         return 1
 
-    # ── Final save ───────────────────────────────────────────
     try:
         _sync_meta_from_hidden(state)
         state_io.save_state(state_path, state)

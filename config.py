@@ -9,11 +9,18 @@ world.py реэкспортирует LOCATION_TYPES и читает LOCATION_TY
 """
 from __future__ import annotations
 
+import os
+
 
 # ---------------------------------------------------------------------
 # BACKEND LLM (§1, §31)
 # ---------------------------------------------------------------------
 # Крутилки. Тестами не покрываются — можно менять на лету.
+#
+# Исключение — MAX_TOKENS и LLM_TIMEOUT_SECONDS: они покрыты контрактными
+# тестами (TestLlmBudgetContract в tests/test_config.py), потому что
+# MAX_TOKENS управляется через env var BURT_MAX_TOKENS и используется
+# в llm_client.py как часть контракта.
 
 BACKEND = "lm_studio"                            # "lm_studio" | "openai"
 LM_STUDIO_URL = "http://localhost:1234/v1"
@@ -21,6 +28,35 @@ OPENAI_API_URL = ""
 OPENAI_API_KEY = ""
 MODEL = "local-model"
 TEMPERATURE = 0.95
+
+
+# Бюджет ответа LLM (§1, §31).
+#
+# max_tokens — это ПОЛНЫЙ бюджет output, включая thinking-токены.
+# Для thinking-моделей (Qwen 3.5 4B с thinking, Gemma 4 E2B с thinking)
+# на "подумать" уходит 300–800 токенов, и при старом значении 512
+# на сам ответ оставалось 0 -> пустая реплика, finish_reason=length.
+#
+# 2048 даёт "простор мысли": thinking-модели перестают обрезаться,
+# Qwen перестаёт заикаться на длинных репликах.
+#
+# Цена: 4B-модель на 6GB VRAM генерит ~20–40 tok/s, то есть ход может
+# занимать 40–75 секунд, если модель реально думает на 1500 токенов.
+# Если латентность станет болью — крути вниз или включай per-mode
+# бюджет (combat=512, exploration=2048) — это TODO на будущее.
+#
+# Управляется через env var BURT_MAX_TOKENS — чтобы гонять прогоны
+# без правки кода:  BURT_MAX_TOKENS=1024 python main.py --new ...
+MAX_TOKENS = int(os.environ.get("BURT_MAX_TOKENS", "2048"))
+
+
+# Таймаут HTTP-запроса к LLM в секундах (§1).
+#
+# При MAX_TOKENS=2048 и медленной модели ход может занимать 50–70 секунд.
+# Старый таймаут 60с ловил ложные ConnectionError -> fallback
+# "Darkness consumes..." на ровном месте. 180с даёт запас на thinking
+# плюс один ретрай.
+LLM_TIMEOUT_SECONDS = 180
 
 
 # ---------------------------------------------------------------------

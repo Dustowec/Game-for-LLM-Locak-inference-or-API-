@@ -5,6 +5,10 @@
 
 Настройки LLM (BACKEND, URL, MODEL, TEMPERATURE) НЕ тестируются —
 это крутилки, не жёсткие требования.
+
+Исключение: MAX_TOKENS и LLM_TIMEOUT_SECONDS — контрактные значения,
+покрыты TestLlmBudgetContract (см. tests/test_llm_client.py, L-тесты).
+MAX_TOKENS управляется через env var BURT_MAX_TOKENS.
 """
 
 import config
@@ -168,3 +172,32 @@ class TestLogging:
     def test_ring_buffer_size(self):
         # §39: ring buffer на 20 строк
         assert config.RING_BUFFER_SIZE == 20
+
+
+# ---------------------------------------------------------------------
+# LLM BUDGET CONTRACT (§1, §31)
+# ---------------------------------------------------------------------
+# В отличие от прочих LLM-крутилок (BACKEND, MODEL, TEMPERATURE),
+# MAX_TOKENS и LLM_TIMEOUT_SECONDS — часть контракта:
+#   - MAX_TOKENS управляется через env var BURT_MAX_TOKENS (прогоны без правки);
+#   - оба используются в llm_client.py и покрыты P/L-тестами.
+
+class TestLlmBudgetContract:
+    def test_max_tokens_default(self):
+        # §1: бюджет output для thinking-моделей
+        assert config.MAX_TOKENS == 2048
+
+    def test_llm_timeout_default(self):
+        # §1: таймаут HTTP-запроса, с запасом на thinking
+        assert config.LLM_TIMEOUT_SECONDS == 180
+
+    def test_max_tokens_env_override(self, monkeypatch):
+        # BURT_MAX_TOKENS=1024 -> config.MAX_TOKENS == 1024 (после reload).
+        import importlib
+        monkeypatch.setenv("BURT_MAX_TOKENS", "1024")
+        try:
+            importlib.reload(config)
+            assert config.MAX_TOKENS == 1024
+        finally:
+            monkeypatch.delenv("BURT_MAX_TOKENS", raising=False)
+            importlib.reload(config)

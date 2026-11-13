@@ -8,15 +8,20 @@
         "choices": [{
             "message": {"role": "assistant", "content": "..."},
             "finish_reason": "stop"
-        }]
+        }],
+        "usage": {"prompt_tokens": N, "completion_tokens": M, ...}
     }
 
-Fallback: если LLM падает 2 раза подряд — возвращаем дефолтный ответ.
+Поведение:
+    - max_tokens и timeout тянутся из config (MAX_TOKENS, LLM_TIMEOUT_SECONDS).
+    - usage логируется на INFO на каждом вызове.
+    - finish_reason=length с непустым content -> принять + WARN.
+    - пустой content -> провал попытки (ретрай), в историю НЕ аппендится.
+    - после исчерпания ретраев -> fallback (тоже без append).
 """
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 from typing import Any, Optional
 
@@ -33,7 +38,6 @@ logger = logging.getLogger(__name__)
 
 _MODEL = config.MODEL
 _TEMPERATURE = config.TEMPERATURE
-_MAX_TOKENS = 512
 
 # URLs
 _BASE_URLS = {
@@ -65,22 +69,26 @@ async def create_chat_completion(
         "model": _MODEL,
         "messages": messages,
         "temperature": _TEMPERATURE,
-        "max_tokens": _MAX_TOKENS,
+        # Inline access to config.MAX_TOKENS — чтобы env override через
+        # BURT_MAX_TOKENS подхватывался даже после importlib.reload(config).
+        "max_tokens": config.MAX_TOKENS,
     }
+    
+    timeout = aiohttp.ClientTimeout(total=config.LLM_TIMEOUT_SECONDS)
 
     async with aiohttp.ClientSession() as session:
         try:
-            async with session.post(url, json=payload, timeout=aiohttp.ClientTimeout(total=60)) as resp:
+            async with session.post(url, json=payload, timeout=timeout) as resp:
                 if resp.status == 404:
                     # Try alternative endpoint (some LM Studio versions use /chat without /v1 prefix)
                     alt_url = f"{base_url}/chat/completions"
-                    async with session.post(alt_url, json=payload, timeout=aiohttp.ClientTimeout(total=60)) as resp2:
+                    async with session.post(alt_url, json=payload, timeout=timeout) as resp2:
                         data = await resp2.json()
                         return data
                 
                 if not (200 <= resp.status < 300):
                     body = await resp.text()
-                    raise RuntimeError(f"LLM API error {resp.status}: {body[:200]}")
+                    raise RuntimeError(f"LLM API error {resp.status}: {body}")
                 
                 data = await resp.json()
                 return data
@@ -104,11 +112,12 @@ async def call_llm(
     Схема:
     1. Собираем messages [system + history + user].
     2. Вызываем create_chat_completion.
-    3. Парсим ответ, добавляем в историю.
-    4. Если ошибка → retry 1 раз.
-    5. Если второй раз ошибка → fallback_answer().
-
-    При ошибке НЕ выбрасываем исключение — возвращаем fallback.
+    3. Логируем usage + finish_reason на INFO.
+    4. Валидация ответа:
+       - пустой content -> провал попытки (ретрай), НЕ аппендим.
+       - finish_reason=length + непустой content -> принять + WARN.
+    5. Если ошибка/пустой ответ и попытки исчерпаны -> fallback
+       (тоже без append в историю).
     """
     if messages_history is None:
         messages_history = []
@@ -123,8 +132,34 @@ async def call_llm(
         try:
             raw = await create_chat_completion(full_messages)
             answer = extract_answer(raw)
+            finish_reason = extract_finish_reason(raw)
+            usage = raw.get("usage") or {}
             
-            # Добавляем в историю
+            # Usage логируем ДО валидации: пустой ответ тоже стоил токенов.
+            prompt_t = usage.get("prompt_tokens", "absent")
+            completion_t = usage.get("completion_tokens", "absent")
+            logger.info(
+                "llm usage: prompt=%s completion=%s finish=%s",
+                prompt_t, completion_t, finish_reason,
+            )
+            
+            # Пустой content — провал попытки, в историю не аппендим.
+            if not answer:
+                logger.warning(
+                    "LLM returned empty content (finish_reason=%s, attempt %d/%d)",
+                    finish_reason, attempt + 1, _MAX_RETRIES + 1,
+                )
+                if attempt < _MAX_RETRIES:
+                    continue
+                logger.error("All attempts returned empty content, using fallback")
+                return _FALLBACK_ANSWER, messages_history
+            
+            # finish_reason=length с непустым content — принимаем с WARN.
+            if finish_reason == "length":
+                logger.warning(
+                    "LLM response truncated (finish_reason=length), accepting partial answer"
+                )
+            
             messages_history.append({"role": "assistant", "content": answer})
             return answer, messages_history
             
@@ -132,7 +167,6 @@ async def call_llm(
             logger.warning(f"LLM call failed (attempt {attempt+1}/{_MAX_RETRIES+1}): {e}")
             if attempt < _MAX_RETRIES:
                 continue
-            # После последнего ретрай — fallback
             logger.error("All attempts failed, using fallback")
             return _FALLBACK_ANSWER, messages_history
 
