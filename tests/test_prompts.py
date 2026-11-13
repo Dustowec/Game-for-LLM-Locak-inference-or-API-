@@ -220,7 +220,7 @@ class TestMemorySummaryPrompt:
         assert "gather" in prompts.MEMORY_SUMMARY_PROMPT.lower()
 
     def test_voice_of_burt(self):
-        assert "in Burt's voice" in prompts.MEMORY_SUMMARY_PROMPT
+        assert "In Burt's voice" in prompts.MEMORY_SUMMARY_PROMPT
 
     def test_dry(self):
         assert "dry" in prompts.MEMORY_SUMMARY_PROMPT.lower()

@@ -1,5 +1,5 @@
 =====================================================================
-BURT -- HANDOFF 10
+BURT -- HANDOFF 9
 Date: 12.11.2026
 Project: BURT-AI (E:\Butr-Ai)
 Spec: v0.7.0
@@ -9,7 +9,7 @@ Uncommitted at handoff write: NO (see commit message below)
 =====================================================================
 
 ---------------------------------------------------------------------
-LANGUAGE POLICY (NEW in HANDOFF-10)
+LANGUAGE POLICY (NEW in HANDOFF-9)
 ---------------------------------------------------------------------
 
 The game is FULLY ENGLISH:
@@ -34,7 +34,7 @@ If you (the next agent) see Cyrillic in source code or UI strings —
 that is a BUG, not a feature. See WHAT WAS DONE IN HANDOFF-10.
 
 ---------------------------------------------------------------------
-SESSION SUMMARY (12.11.2026) -- HANDOFF-10
+SESSION SUMMARY (12.11.2026) -- HANDOFF-9
 ---------------------------------------------------------------------
 
 Main task: translate the ENTIRE game to English.
@@ -78,7 +78,7 @@ What was NOT touched (intentionally):
 Tools kept for reference (can be deleted):
   - dict.json             (80+ term pairs, RU -> EN)
   - translate_cyrillic.py (one-shot replacement script)
-  - CyrDict.md            (original HANDOFF-10 dictionary)
+  - CyrDict.md            (original HANDOFF-9 dictionary)
 
 Tests: 1345 -> 1354 (+9 net; +1 from prompts fix, +8 from sensory
        test sync; -0 because English asserts already matched new UI).
@@ -211,7 +211,7 @@ MEMORY AID (all English now):
 
 TEST COUNTER: 1354 passed.
   Last verified: 12.11.2026
-  Added in HANDOFF-10: +9 net (prompts + sensory test sync)
+  Added in HANDOFF-9: +9 net (prompts + sensory test sync)
 
 FOUND LATER (verified):
   - The double `step += 1` in `search` is a genuine bug - fixed
@@ -221,5 +221,5 @@ FOUND LATER (verified):
   - "step at the start of combat" - incorrect, removed from todo.
 
 =====================================================================
-END OF HANDOFF 10.
+END OF HANDOFF 9.
 =====================================================================
